@@ -2,6 +2,8 @@
 
 A simple [CNX](https://github.com/mjkillough/cnx) based bar for X11
 
+i hope to have a pakege ready in a few deys 
+
 ### until i am ready i recommend you take a look at:
 #### rust bars 
 CNX: https://github.com/mjkillough/cnx
@@ -15,6 +17,6 @@ i will accept all the help i can get just go to the discord server
 
 ### dicord
 https://discord.gg/TpFsgrsbvb
-## License
 
+## License
 MIT
