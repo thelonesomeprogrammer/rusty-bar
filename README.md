@@ -1,4 +1,4 @@
-# rusty-bar - not ready yet
+# rusty-bar - a bar for rustaceans and everyone else
 
 A simple [CNX](https://github.com/mjkillough/cnx) based bar for X11
 
@@ -11,7 +11,8 @@ polybar: https://github.com/polybar/polybar
 
 ### want to help
 at this point you shuld properply help at CNX insted, but it is your call 
-i will accept all the help i can get just go to the discord server
+i will accept all the help i can get.
+if you chose to help here just go to the discord server
 
 ### dicord
 https://discord.gg/TpFsgrsbvb
