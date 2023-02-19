@@ -2,7 +2,8 @@
 
 A simple [CNX](https://github.com/mjkillough/cnx) based bar for X11
 
-### rusty-bar is in bata if you want somting more finished i recommend you take a look at:
+### rusty-bar is in bata 
+if you want somting more finished i recommend you take a look at:
 #### rust bars
 CNX: https://github.com/mjkillough/cnx (is mpre for rustaceans and proramming types)
 
