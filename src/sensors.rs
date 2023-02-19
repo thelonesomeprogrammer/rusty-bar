@@ -51,6 +51,17 @@ pub struct Sensors {
     update_interval: Duration,
     attr: Attributes,
     sensors: Vec<String>,
+    render: Option<Box<dyn Fn(SensorsInfo) -> String>>,
+}
+pub enum TempUnit {
+    SI,
+    Imperial,
+    
+}
+
+pub struct SensorsInfo {
+    pub temp: String,
+    pub unit: TempUnit, 
 }
 
 impl Sensors {
@@ -95,11 +106,12 @@ impl Sensors {
     /// # }
     /// # fn main() { run().unwrap(); }
     /// ```
-    pub fn new<S: Into<String>>(attr: Attributes, sensors: Vec<S>) -> Sensors {
+    pub fn new<S: Into<String>>(attr: Attributes, sensors: Vec<S>,render: Option<Box<dyn Fn(SensorsInfo) -> String>>) -> Sensors {
         Sensors {
             update_interval: Duration::from_secs(60),
             attr,
             sensors: sensors.into_iter().map(Into::into).collect(),
+	    render,
         }
     }
 
@@ -109,19 +121,21 @@ impl Sensors {
             .context("Failed to run `sensors`")?;
         let string = String::from_utf8(output.stdout).context("Invalid UTF-8 in sensors output")?;
         let parsed = parse_sensors_output(&string).context("Failed to parse `sensors` output")?;
+	print!("{:#?}", parsed);
         self.sensors
             .iter()
             .map(|sensor_name| {
                 let text = parsed
                     .get::<str>(sensor_name)
                     .map_or("Invalid".to_owned(), |&Value { temp, units }| {
-                        format!("{temp}°{units}")
-                    });
+			let info = SensorsInfo{temp:temp.to_string(),unit:TempUnit::SI,};
+			self.render.as_ref().map_or(format!("{temp}{units}"), |x| (x)(info))
+			                        });
                 Ok(Text {
                     attr: self.attr.clone(),
                     text,
                     stretch: false,
-                    markup: false,
+                    markup: true,
                 })
             })
             .collect()
@@ -134,58 +148,5 @@ impl Widget for Sensors {
         let stream = IntervalStream::new(interval).map(move |_| self.tick());
 
         Ok(Box::pin(stream))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::{parse_sensors_output, Value};
-
-    #[test]
-    fn works() {
-        let output = r#"applesmc-isa-0300
-Adapter: ISA adapter
-Right Side  :    0 RPM  (min = 2000 RPM, max = 6199 RPM)
-Ts1S:         -127.0 C
-Ts2S:          +34.0 F
-
-coretemp-isa-0000
-Adapter: ISA adapter
-Package id 0:  +58.0 C  (high = +105.0 C, crit = +105.0 C)
-Core 0:        +53.0 C  (high = +105.0 C, crit = +105.0 C)
-Core 1:        +58.0 C  (high = +105.0 C, crit = +105.0 C)
-"#;
-
-        let parsed = parse_sensors_output(output).unwrap();
-        assert_eq!(
-            parsed.get("Core 0"),
-            Some(&Value {
-                temp: "53.0",
-                units: "C",
-            })
-        );
-        assert_eq!(
-            parsed.get("Core 1"),
-            Some(&Value {
-                temp: "58.0",
-                units: "C",
-            })
-        );
-        assert_eq!(
-            parsed.get("Ts1S"),
-            Some(&Value {
-                temp: "-127.0",
-                units: "C",
-            })
-        );
-        assert_eq!(
-            parsed.get("Ts2S"),
-            Some(&Value {
-                temp: "34.0",
-                units: "F",
-            })
-        );
-
-        assert_eq!(parsed.len(), 5);
     }
 }

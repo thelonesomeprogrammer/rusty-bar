@@ -13,6 +13,15 @@ pub struct Wireless {
     interface: String,
     update_interval: Duration,
     threshold: Option<Threshold>,
+    render: Option<Box<dyn Fn(WirelessInfoStruct) -> String>>,
+
+}
+
+
+
+pub struct WirelessInfoStruct{
+    pub ssid: String,
+    pub signal: u8,
 }
 
 impl Wireless {
@@ -55,19 +64,20 @@ impl Wireless {
     /// # }
     /// # fn main() { run().unwrap(); }
     /// ```
-    pub fn new(attr: Attributes, interface: String, threshold: Option<Threshold>) -> Wireless {
+    pub fn new(attr: Attributes, interface: String, threshold: Option<Threshold>, render: Option<Box<dyn Fn(WirelessInfoStruct) -> String>>) -> Wireless {
         Wireless {
             update_interval: Duration::from_secs(3600),
             interface,
             attr,
             threshold,
+	    render,
         }
     }
 
     fn tick(&self) -> Vec<Text> {
         let wireless_info = get_wireless_info(self.interface.clone());
 
-        let text = match wireless_info {
+        let d_text = match wireless_info {
             Some(info) => match &self.threshold {
                 Some(thold) => {
                     let color = if info.wi_quality <= thold.low.threshold {
@@ -77,22 +87,35 @@ impl Wireless {
                     } else {
                         &thold.high.color
                     };
-                    format!(
-                        "<span foreground=\"#808080\">[</span>{} <span foreground=\"{}\">{}%</span><span foreground=\"#808080\">]</span>",
+                    format!("{} <span foreground=\"{}\">{}%</span>",
                         info.wi_essid,
                         color.to_hex(),
-                        info.wi_quality
+                        info.wi_quality,
                     )
                 }
                 None => format!("{} {}%", info.wi_essid, info.wi_quality),
             },
             None => "NA".to_owned(),
         };
+        let wireless_info2 = get_wireless_info(self.interface.clone()).unwrap();
+	
+	let info = WirelessInfoStruct{
+	    ssid: wireless_info2.wi_essid.to_string().clone(),
+	    signal: wireless_info2.wi_quality.clone(),
+	};
+        let text = self.render.as_ref().map_or(d_text, |x| (x)(info));
+	let markup = if self.threshold.is_some(){
+	    true
+	} else if self.render.is_some(){
+	    true
+	} else {
+	    false
+	};
         vec![Text {
             attr: self.attr.clone(),
             text,
             stretch: false,
-            markup: self.threshold.is_some(),
+            markup: markup,
         }]
     }
 }

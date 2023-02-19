@@ -12,6 +12,7 @@ license = "MIT"
 
 
 [dependencies]
+device_query = "1.1.1"
 anyhow = "1.0.41"
 async-stream = "0.3.3"
 cairo-rs = { version = "0.16.7", features = ["xcb"] }
@@ -38,3 +39,4 @@ process-stream = { version = "0.4.1"}
 serde = { version = "1.0.152"}
 serde_derive = { version = "1.0.152"}
 serde_json = { version = "1.0.91"}
+battery = "0.7.8"

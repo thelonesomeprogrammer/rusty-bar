@@ -1,36 +1,15 @@
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::Result;
 use crate::text::{Attributes, Color, Text};
 use crate::widget::{Widget, WidgetStream};
-use std::fs::File;
-use std::io::Read;
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::time;
 use tokio_stream::wrappers::IntervalStream;
 use tokio_stream::StreamExt;
+use battery::{Manager,Battery,State,units::Time};
 
 /// Represent Battery's operating status
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Status {
-    Full,
-    Charging,
-    Discharging,
-    Unknown,
-}
 
-impl FromStr for Status {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Full" => Ok(Status::Full),
-            "Charging" => Ok(Status::Charging),
-            "Discharging" => Ok(Status::Discharging),
-            "Unknown" => Ok(Status::Unknown),
-            _ => Err(anyhow!("Unknown Status: {}", s)),
-        }
-    }
-}
 
 /// Shows battery charge percentage
 ///
@@ -42,24 +21,26 @@ impl FromStr for Status {
 /// Battery charge information is read from [`/sys/class/power_supply/BAT0/`].
 ///
 /// [`/sys/class/power_supply/BAT0/`]: https://www.kernel.org/doc/Documentation/power/power_supply_class.txt
-pub struct Battery {
+pub struct BatteryView {
     update_interval: Duration,
-    battery: String,
     attr: Attributes,
     warning_color: Color,
+    bat: Battery,
     render: Option<Box<dyn Fn(BatteryInfo) -> String>>,
 }
 
 /// Represent Battery information
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BatteryInfo {
     /// Battery Status
-    pub status: Status,
+    pub state: State,
     /// Capacity in percentage
-    pub capacity: u8,
+    pub capacity: f32,
+    /// time to full and time to empty
+    pub time:Time,
 }
 
-impl Battery {
+impl BatteryView {
     ///  Creates a new Battery widget.
     ///
     ///  Creates a new `Battery` widget, whose text will be displayed with the
@@ -101,54 +82,40 @@ impl Battery {
     pub fn new(
         attr: Attributes,
         warning_color: Color,
-        battery: Option<String>,
         render: Option<Box<dyn Fn(BatteryInfo) -> String>>,
-    ) -> Battery {
-        Battery {
+    ) -> BatteryView {
+	let manager = Manager::new().expect("no bat");
+	let mut batter: Option<Battery>=None;
+	for (_,maybe_battery) in manager.batteries().unwrap().enumerate() {
+            batter = Some(maybe_battery.expect("no bat"));}
+	let bat = batter.expect("no bat");
+        BatteryView {
             update_interval: Duration::from_secs(60),
-            battery: battery.unwrap_or_else(|| "BAT0".into()),
             attr,
             warning_color,
             render,
+	    bat,
         }
     }
 
-    fn load_value_inner<T>(&self, file: &str) -> Result<T>
-    where
-        T: FromStr,
-        <T as FromStr>::Err: Into<Error>,
-    {
-        let path = format!("/sys/class/power_supply/{}/{}", self.battery, file);
-        let mut file = File::open(path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let s = FromStr::from_str(contents.trim())
-            .map_err(|e: <T as FromStr>::Err| e.into())
-            .context("Failed to parse value")?;
-        Ok(s)
+    fn get_value(&mut self) -> Result<BatteryInfo> {
+	self.bat.refresh()?;
+        let capacity: f32 = self.bat.state_of_charge().value*100.0;
+        let state: State = self.bat.state();
+	let time = if self.bat.time_to_full().is_some(){
+	    self.bat.time_to_full().expect("no time")
+	} else if self.bat.time_to_empty().is_some() {
+	    self.bat.time_to_empty().expect("no time")
+	} else {
+	    Time::from_str("00:00").expect("notime")
+	};
+	
+        Ok(BatteryInfo { capacity, state, time })
     }
 
-    fn load_value<T>(&self, file: &str) -> Result<T>
-    where
-        T: FromStr,
-        <T as FromStr>::Err: Into<Error>,
-    {
-        let value = self
-            .load_value_inner(file)
-            .with_context(|| format!("Could not load value from battery status file: {file}"))?;
-        Ok(value)
-    }
-
-    fn get_value(&self) -> Result<BatteryInfo> {
-        let capacity: u8 = self.load_value("capacity")?;
-        let status: Status = self.load_value("status")?;
-        Ok(BatteryInfo { capacity, status })
-    }
-
-    fn tick(&self) -> Result<Vec<Text>> {
+    fn tick(&mut self) -> Result<Vec<Text>> {
         let battery_info = self.get_value()?;
-
-        let default_text = format!("({percentage:.0}%)", percentage = battery_info.capacity,);
+        let default_text = format!("({percentage}%)", percentage = battery_info.capacity.round() as i32,);
         let text = self
             .render
             .as_ref()
@@ -157,7 +124,7 @@ impl Battery {
         // If we're discharging and have <=10% left, then render with a
         // special warning color.
         let mut attr = self.attr.clone();
-        if battery_info.status == Status::Discharging && battery_info.capacity <= 10 {
+        if battery_info.state == State::Discharging && battery_info.capacity <= 10.0 {
             attr.fg_color = self.warning_color.clone()
         }
 
@@ -170,8 +137,8 @@ impl Battery {
     }
 }
 
-impl Widget for Battery {
-    fn into_stream(self: Box<Self>) -> Result<WidgetStream> {
+impl Widget for BatteryView {
+    fn into_stream(mut self: Box<Self>) -> Result<WidgetStream> {
         let interval = time::interval(self.update_interval);
         let stream = IntervalStream::new(interval).map(move |_| self.tick());
 

@@ -43,7 +43,7 @@ impl Widget for Clock {
     fn into_stream(self: Box<Self>) -> Result<WidgetStream> {
         // As we're not showing seconds, we can sleep for however long
         // it takes until the minutes changes between updates.
-        let one_minute = Duration::from_secs(60);
+        let one_minute = Duration::from_secs(30);
         let interval = time::interval(one_minute);
         let stream = IntervalStream::new(interval).map(move |_| Ok(self.tick()));
 

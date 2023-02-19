@@ -21,6 +21,12 @@ use tokio_stream::{Stream, StreamExt};
 /// compiling this widget.
 pub struct Volume {
     attr: Attributes,
+    render: Option<Box<dyn Fn(VolumeInfo) -> String>>,
+}
+
+pub struct VolumeInfo {
+    pub volume: i32,
+    pub ifMute: bool,
 }
 
 impl Volume {
@@ -64,8 +70,8 @@ impl Volume {
     /// # }
     /// # fn main() { run().unwrap(); }
     /// ```
-    pub fn new(attr: Attributes) -> Volume {
-        Volume { attr }
+    pub fn new(attr: Attributes, render: Option<Box<dyn Fn(VolumeInfo) -> String>>) -> Volume {
+        Volume {attr, render}
     }
 }
 
@@ -84,20 +90,24 @@ impl Widget for Volume {
             // FrontLeft has special meaning in ALSA and is the channel
             // that's used when the mixer is mono.
             let channel = SelemChannelId::FrontLeft;
-
+	    
             let mixer = Mixer::new(mixer_name, true)?;
             let master = mixer.find_selem(&SelemId::new("Master", 0))
              .ok_or_else(|| anyhow!("Couldn't open Master channel"))?;
 
             let mute = master.get_playback_switch(channel)? == 0;
+            let volume = master.get_playback_volume(channel)?;
+            let (min, max) = master.get_playback_volume_range();
+            let percentage = ((volume as f64 / (max as f64 - min as f64)) * 100.0).round() as i32;
+	    let volIonfo = VolumeInfo{
+		volume: percentage,
+		ifMute: mute,
+	    };
 
-            let text = if !mute {
-                let volume = master.get_playback_volume(channel)?;
-                let (min, max) = master.get_playback_volume_range();
-                let percentage = (volume as f64 / (max as f64 - min as f64)) * 100.0;
-                format!("<span foreground=\"#808080\">[</span>🔈 {percentage:.0}%<span foreground=\"#808080\">]</span>")
+            let text: String = if !mute {
+		self.render.as_ref().map_or(format!("🔈 {percentage:.0}%"), |x| (x)(volIonfo))
             } else {
-                "🔇".to_owned()
+                self.render.as_ref().map_or("🔇".to_string(), |x| (x)(volIonfo))
             };
 
             Ok(vec![Text {
