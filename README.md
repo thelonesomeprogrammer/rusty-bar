@@ -2,12 +2,12 @@
 
 A simple [CNX](https://github.com/mjkillough/cnx) based bar for X11
 
-### until i am ready i recommend you take a look at:
-#### rust bars 
-CNX: https://github.com/mjkillough/cnx
+### rusty-bar is in bate if you want somting more finished i recommend you take a look at:
+#### rust bars
+CNX: https://github.com/mjkillough/cnx (is mpre for rustaceans and proramming types)
 
 #### other bars
-polybar: https://github.com/polybar/polybar
+polybar: https://github.com/polybar/polybar (a great bar for most peaple)
 
 ### want to help
 at this point you shuld properply help at CNX insted, but it is your call 
