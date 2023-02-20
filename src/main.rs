@@ -59,8 +59,12 @@ fn main() -> Result<()> {
 
 
     let battery_render = Box::new(|battery_info: BatteryInfo| {
-        let percentage = battery_info.capacity as i32;
-	let mut min = (battery_info.time.value/60.0).round() as i32;
+    let percentage = battery_info.capacity as i32;
+	let time = match battery_info.time.is_some() {
+		true => battery_info.time.unwrap().value,
+		false => 0.0,
+	};
+	let mut min = (time/60.0).round() as i32;
 	let mut hour = 0;
 	while min>60 {
 	    min-=60;
@@ -97,7 +101,11 @@ fn main() -> Result<()> {
 	    State::__Nonexhaustive=> "󰂃 ",
 	};
 	
-        let default_text = format!("{percentage:0.}% {hour}:{min:0>2}");
+    let default_text = if time > 60.0 {
+		format!("{percentage:0.}% {hour}:{min:0>2}")
+	} else {
+		format!("{percentage:0.}% none")
+	};
 	template(String::from(icon),default_text)
    });
 
@@ -152,13 +160,13 @@ fn main() -> Result<()> {
     });
 
     let volume_render = Box::new(|info: VolumeInfo|{
-	let text = if !info.ifMute {
+	let text = if !info.if_mute {
 	    format!("{}%",info.volume)
 	} else {
 	    "mute".to_string()
 	};
 
-	let icon = match info.ifMute {
+	let icon = match info.if_mute {
 	    true => "󰝟 ",
 	    false => match info.volume {
 		d if d > 80 => " ",

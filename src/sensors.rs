@@ -121,7 +121,6 @@ impl Sensors {
             .context("Failed to run `sensors`")?;
         let string = String::from_utf8(output.stdout).context("Invalid UTF-8 in sensors output")?;
         let parsed = parse_sensors_output(&string).context("Failed to parse `sensors` output")?;
-	print!("{:#?}", parsed);
         self.sensors
             .iter()
             .map(|sensor_name| {
@@ -130,7 +129,7 @@ impl Sensors {
                     .map_or("Invalid".to_owned(), |&Value { temp, units }| {
 			let info = SensorsInfo{temp:temp.to_string(),unit:TempUnit::SI,};
 			self.render.as_ref().map_or(format!("{temp}{units}"), |x| (x)(info))
-			                        });
+        });
                 Ok(Text {
                     attr: self.attr.clone(),
                     text,

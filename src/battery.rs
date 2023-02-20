@@ -37,7 +37,7 @@ pub struct BatteryInfo {
     /// Capacity in percentage
     pub capacity: f32,
     /// time to full and time to empty
-    pub time:Time,
+    pub time:Option<Time>,
 }
 
 impl BatteryView {
@@ -102,12 +102,12 @@ impl BatteryView {
 	self.bat.refresh()?;
         let capacity: f32 = self.bat.state_of_charge().value*100.0;
         let state: State = self.bat.state();
-	let time = if self.bat.time_to_full().is_some(){
-	    self.bat.time_to_full().expect("no time")
+	let time:Option<Time> = if self.bat.time_to_full().is_some(){
+	    Some(self.bat.time_to_full().expect("no time"))
 	} else if self.bat.time_to_empty().is_some() {
-	    self.bat.time_to_empty().expect("no time")
+	    Some(self.bat.time_to_empty().expect("no time"))
 	} else {
-	    Time::from_str("00:00").expect("notime")
+	    None
 	};
 	
         Ok(BatteryInfo { capacity, state, time })

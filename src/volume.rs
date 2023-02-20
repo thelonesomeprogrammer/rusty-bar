@@ -26,7 +26,7 @@ pub struct Volume {
 
 pub struct VolumeInfo {
     pub volume: i32,
-    pub ifMute: bool,
+    pub if_mute: bool,
 }
 
 impl Volume {
@@ -99,15 +99,15 @@ impl Widget for Volume {
             let volume = master.get_playback_volume(channel)?;
             let (min, max) = master.get_playback_volume_range();
             let percentage = ((volume as f64 / (max as f64 - min as f64)) * 100.0).round() as i32;
-	    let volIonfo = VolumeInfo{
+	    let vol_ionfo = VolumeInfo{
 		volume: percentage,
-		ifMute: mute,
+		if_mute: mute,
 	    };
 
             let text: String = if !mute {
-		self.render.as_ref().map_or(format!("🔈 {percentage:.0}%"), |x| (x)(volIonfo))
+		self.render.as_ref().map_or(format!("🔈 {percentage:.0}%"), |x| (x)(vol_ionfo))
             } else {
-                self.render.as_ref().map_or("🔇".to_string(), |x| (x)(volIonfo))
+                self.render.as_ref().map_or("🔇".to_string(), |x| (x)(vol_ionfo))
             };
 
             Ok(vec![Text {
