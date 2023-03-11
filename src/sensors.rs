@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Context, Result};
 use crate::text::{Attributes, Text};
-use crate::widget::{Widget, WidgetStream};
 use regex::Regex;
 use std::collections::HashMap;
 use std::process::Command;

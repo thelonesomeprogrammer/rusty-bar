@@ -1,7 +1,5 @@
 use anyhow::Result;
 use crate::text::{Attributes, Color, Text};
-use crate::widget::{Widget, WidgetStream};
-use std::str::FromStr;
 use std::time::Duration;
 use tokio::time;
 use tokio_stream::wrappers::IntervalStream;

@@ -1,6 +1,5 @@
 use anyhow::Result;
 use crate::text::{Attributes, Text};
-use crate::widget::{Widget, WidgetStream};
 use std::process::Command as Process;
 use std::time::Duration;
 use tokio::time;

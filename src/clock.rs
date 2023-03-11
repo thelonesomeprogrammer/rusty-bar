@@ -5,7 +5,6 @@ use tokio_stream::wrappers::IntervalStream;
 use tokio_stream::StreamExt;
 
 use crate::text::{Attributes, Text};
-use crate::widget::{Widget, WidgetStream};
 
 /// Shows the current time and date.
 ///
@@ -37,6 +36,7 @@ impl Clock {
         }];
         texts
     }
+
 }
 
 impl Widget for Clock {

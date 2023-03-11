@@ -1,28 +1,261 @@
-use rusty_bar::clock::Clock;
-use rusty_bar::battery::{BatteryView,BatteryInfo};
-use battery::State;
+use gtk::gdk::*;
+use gtk::gio::ApplicationFlags;
+use gtk::prelude::*;
+use gtk::*;
+use gtk_layer_shell::Edge;
+use std::time::Duration;
+use std::fs::read_to_string;
+use serde::Deserialize;
 use rusty_bar::cpu::Cpu;
-use rusty_bar::active_window_title::ActiveWindowTitle;
-use rusty_bar::leftwm::{LeftWM,LeftWMAttributes};
-use rusty_bar::disk_usage::{DiskUsage,DiskInfo};
-use rusty_bar::text::{Font,Color,Attributes,Padding,Threshold};
-use rusty_bar::wireless::{Wireless, WirelessInfoStruct};
-use rusty_bar::sensors::{Sensors, SensorsInfo,TempUnit};
-use rusty_bar::volume::{Volume, VolumeInfo};
-use rusty_bar::widget::Cnx;
-use rusty_bar::bar::Position;
-use anyhow::Result;
+use rusty_bar::text::{Attributes,Font,Padding,Color};
 
 
 
-fn template(icon:String,info:String) -> String{
-    let c1="#00ee00";
-    let c2="#eeeeee";
-    format!("<span foreground=\"{c1}\">{icon}</span><span foreground=\"{c2}\">{info}</span>")
+
+#[derive(Deserialize)]
+enum Pos {
+    Top,
+    Buttom,
+}
+#[derive(Deserialize)]
+enum WType {
+    Workspaces,
+    Clock,
+    ActiveWindow,
+    CPU,
+    RAM,
+    Wireless,
+    Battry,
+    Systray,
+    Temps,
+    Disk,
+    Alsa,
+    Script,
+}
+#[derive(Deserialize)]
+struct Widget {
+    wtype: WType,
+    callback: Option<String>,
+    cmd: Option<String>,
+    format: Option<String>,
+    nomarkup: Option<bool>,
+    tooltip: Option<String>,
+    notoolmarkup: Option<bool>,
+    icon: Option<String>,
+    replace_with_icons: Option<Vec<Vec<String>>>,
+    animate: Option<Vec<AniStr>>,
+    warning: Option<Vec<AniStr>>
+}
+#[derive(Deserialize)]
+struct AniStr {
+    frame:u8,
+    format:String,
+}
+#[derive(Deserialize)]
+struct Widgets {
+    left:Option<Vec<Widget>>,
+    center:Option<Vec<Widget>>,
+    right:Option<Vec<Widget>>,
+}
+#[derive(Deserialize)]
+struct RustyBar {
+    pos:Option<Pos>,
+    noicons:Option<bool>,
+    backgrund:Option<String>,
+    foregrund:Option<String>,
+    iconcolor:Option<String>,
+    widgets:Option<Widgets>,}
+
+pub trait BarWidget {
+    fn tick();
+
+    fn new();
 }
 
 
+fn main(){
+    let application = Application::new(None, ApplicationFlags::default());
+    application.connect_activate(|app| {
+	let window = ApplicationWindow::new(app);
 
+	/*
+	let conf: String = if read_to_string("~.config/rusty_bar/config.ron").is_ok(){
+	    read_to_string("~.config/rusty_bar/config.ron").unwrap()
+	} else {
+	    println!("no config in .config/rusty_bar/");
+	    read_to_string("/etc/rusty_bar/config.ron").expect("no fallback config in etc/rusty_bar")
+		
+	};
+	let config: RustyBar = ron::from_str(conf.as_str()).expect("error in config");
+	*/
+
+    
+	window.connect_screen_changed(set_visual);
+	window.connect_draw(draw);
+
+    // Initialize layer shell before the window has been fully initialized.
+	gtk_layer_shell::init_for_window(&window);
+
+    // Order above normal windows
+    // Prior to 0.2.9, this was set to Bottom but it caused issues with tooltips being shown below
+    // windows.
+	gtk_layer_shell::set_layer(&window, gtk_layer_shell::Layer::Top);
+
+    
+    // Push other windows out of the way
+    // Toggling this off may help some if they are in applications that have weird unicode text, which may mess with the bars scaling.
+	gtk_layer_shell::auto_exclusive_zone_enable(&window);
+
+	/*let istop = match config.pos.is_some() {
+	    true => true,
+	    false =>true /*match config.pos.unwrap() {
+		Pos::Top => true,
+		Pos::Buttom => false,
+	    }*/
+	};*/
+    
+	gtk_layer_shell::set_anchor(&window, Edge::Top, true);//istop);
+	gtk_layer_shell::set_anchor(&window, Edge::Right, true);
+	gtk_layer_shell::set_anchor(&window, Edge::Left, true);
+	gtk_layer_shell::set_anchor(&window, Edge::Bottom, false);// !istop);
+    // Allows for specifing the namespace of the layer.
+    // The default is "gtk-layer-shell" to not break existing configs.
+	let namespace = "gtk-layer-shell".to_string();
+
+	gtk_layer_shell::set_namespace(&window, &namespace);
+
+    // Initialize gdk::Display by default value, which is decided by the compositor.
+	let display = Display::default().expect("thing");
+
+    // Loads the monitor variable from config, default is 0. 
+    // Gets the actual gdk::Monitor from configured number.
+	let monitor = display.monitor(0).expect("thing");
+
+    // Sets which monitor should be used for the bar.
+	gtk_layer_shell::set_monitor(&window, &monitor);
+
+    // For transparency to work.
+	window.set_app_paintable(true);
+
+    // Build all the widgets.
+	build_widgets(&window/*,config*/);});
+
+    application.run();
+}
+fn set_visual(window: &ApplicationWindow, screen: Option<&Screen>) {
+    if let Some(screen) = screen {
+        if let Some(ref visual) = screen.rgba_visual() {
+            window.set_visual(Some(visual)); // Needed for transparency, not available in GTK 4+ so
+                                             // F.
+        }
+    }
+}
+// Draws the window using a custom color and opacity.
+fn draw(_: &ApplicationWindow, ctx: &cairo::Context) -> Inhibit {
+    // Applys
+    ctx.set_source_rgba(0.1, 0.1, 0.1, 0.5);
+    ctx.set_operator(cairo::Operator::Screen);
+    ctx.paint().expect("thing");
+    Inhibit(false)
+}
+fn build_widgets(window: &ApplicationWindow/*,config:RustyBar*/) {
+    // Create box widgets, which we'll be using to draw the content onto.
+    let root = Box::new(Orientation::Horizontal, 0);
+    let left = Box::new(Orientation::Horizontal, 0);
+    let centered = Box::new(Orientation::Horizontal, 0);
+    let right = Box::new(Orientation::Horizontal, 0);
+
+    // 0.2.5: Root expands across the entire bar, previously "left" would do this but it isn't
+    //   ideal when customizing, since borders would draw on the entire bar rather than just on the
+    //   left portion of the bar.
+    root.set_widget_name("root");
+
+    // 0.2.5: Allow for customizing left, centered and right.
+    left.set_widget_name("left");
+    centered.set_widget_name("centered");
+    right.set_widget_name("right");
+
+    root.set_center_widget(Some(&centered));
+    root.pack_end(&right, false, true, 0);
+    root.add(&left);
+    window.add(&root);
+    /*
+    if let container = config.widgets.unwrap(){
+	if let wedgets = container.left.unwrap() {
+	    for i in &wedgets{
+		wedgit("left".to_string(),i)
+	    }
+	}
+	if let wedgets = container.center.unwrap() {
+	    for i in &wedgets{
+		wedgit("center".to_string(),i)
+	    }
+	}
+	if let wedgets = container.right.unwrap() {
+	    for i in &wedgets{
+		wedgit("right".to_string(), i)
+	    }   
+	}
+    }else {
+
+}*/
+
+    wedgit("center".to_owned(), &Widget{
+	wtype: WType::CPU,
+	callback: None,
+        cmd: None,
+        format: None,
+        nomarkup: None,
+        tooltip: None,
+        notoolmarkup: None,
+        icon: None,
+        replace_with_icons: None,
+        animate: None,
+        warning: None,
+
+    },&centered);
+
+    // Prepare and show all of the widgets.
+    window.show_all();
+}
+fn wedgit(con:String,wed:&Widget,cont:&Box) {
+    match wed.wtype {
+	WType::CPU => {
+            let icon = wed.icon.clone().unwrap_or(" ".to_string());
+		let text = if wed.format.is_none(){
+		    format!("<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>load</span>")
+		} else{
+		    wed.format.clone().unwrap()
+		};
+            let label=Label::new(None);
+
+            label.set_widget_name("CPU");
+	    label.set_use_markup(true);
+            label.set_markup(&text);
+	    cont.add(&label);
+
+            let mut cpu=Cpu::new(attr(), text).unwrap();
+            let mut tick = move || {
+            label.set_markup(&cpu.tick().unwrap()[0].text);
+            glib::Continue(true)};
+    
+            tick();
+            glib::timeout_add_local(Duration::from_millis(1000), tick);
+	},
+	WType::RAM => {},
+	WType::Disk => {},
+	WType::Alsa => {},
+	WType::Clock => {},
+	WType::Temps => {},
+	WType::Battry => {},
+	WType::Script => {},
+	WType::Systray => {},
+	WType::Wireless => {},
+	WType::Workspaces => {},
+	WType::ActiveWindow => {},	    
+    }
+}
+    
 fn attr() -> Attributes {
     Attributes{
 	font: Font::new("Hack Nerd Font 11"),
@@ -31,184 +264,3 @@ fn attr() -> Attributes {
 	padding: Padding::new(8.0, 8.0, 0.0, 0.0),
     }
 }
-
-
-
-fn main() -> Result<()> {
-    let focused = Attributes {
-        fg_color: Color::from_hex("#55ff55"),
-	padding: Padding::new(8.0, 8.0, 0.0, 0.0),
-	bg_color: Some(Color::from_hex("#222222")),
-	 ..attr()
-        };
-    let visible = Attributes {
-        fg_color: Color::green(),
-        ..attr()
-    };
-    let busy = Attributes {
-	fg_color: Color::from_hex("#119911"),
-	padding: Padding::new(1.0, 1.0, 0.0, 0.0),
-	..attr()
-    };
-    let empty = Attributes {
-	fg_color: Color::from_hex("#bbbbbb"),
-	padding: Padding::new(1.0, 1.0, 0.0, 0.0),
-	..attr()
-    };    
-    let pager = LeftWM::new("eDP-1".to_string(),LeftWMAttributes {focused,visible,busy,empty});
-
-
-    let battery_render = Box::new(|battery_info: BatteryInfo| {
-    let percentage = battery_info.capacity as i32;
-	let time = match battery_info.time.is_some() {
-		true => battery_info.time.unwrap().value,
-		false => 0.0,
-	};
-	let mut min = (time/60.0).round() as i32;
-	let mut hour = 0;
-	while min>60 {
-	    min-=60;
-	    hour+=1;
-	}
-	let icon = match battery_info.state {
-	    State::Full=> "󰂄 ",
-	    State::Charging=> match percentage {
-		d if d > 90 => "󰂋 ",
-		d if d > 80 => "󰂊 ",
-		d if d > 70 => "󰢞 ",
-		d if d > 60 => "󰂉 ",
-		d if d > 50 => "󰢝 ",
-		d if d > 40 => "󰂈 ",
-		d if d > 30 => "󰂇 ",
-		d if d > 20 => "󰂆 ",
-		d if d > 10 => "󰢜 ",
-		_ => "󰢟 ",
-	    },
-	    State::Discharging=> match percentage {
-		d if d > 90 => "󰂂 ",
-		d if d > 80 => "󰂁 ",
-		d if d > 70 => "󰂀 ",
-		d if d > 60 => "󰁿 ",
-		d if d > 50 => "󰁾 ",
-		d if d > 40 => "󰁽 ",
-		d if d < 30 => "󰁼 ",
-		d if d > 20 => "󰁻 ",
-		d if d > 10 => "󰁺 ",
-		_ => "󰂎 ",
-	    },
-	    State::Unknown=> "󰂑  ",
-	    State::Empty=> "󱉞  ",
-	    State::__Nonexhaustive=> "󰂃 ",
-	};
-	
-    let default_text = if time > 60.0 {
-		format!("{percentage:0.}% {hour}:{min:0>2}")
-	} else {
-		format!("{percentage:0.}% none")
-	};
-	template(String::from(icon),default_text)
-   });
-
-    let battery = BatteryView::new(attr(), Color::red(), Some(battery_render));
-
-   
-    let root_render=Box::new(|disk_info: DiskInfo| {
-        let left = (disk_info.used.get_bytes()*100)/(disk_info.total.get_bytes());
-        let disk_text = format!("{left}%");
-        template(String::from(" "), disk_text)
-    });
-    let root = DiskUsage::new(attr(), String::from("/"), Some(root_render)); 
-
-
-    let home_render=Box::new(|disk_info: DiskInfo| {
-        let left = (disk_info.used.get_bytes()*100)/(disk_info.total.get_bytes());
-        let disk_text = format!("{left}%");
-        template(String::from(" "), disk_text)
-    });
-    let home = DiskUsage::new(attr(), String::from("/home"), Some(home_render)); 
-
-
-    let cpu_render = Box::new(|load| {
-	
-        template(String::from(" "),format!("{:2}%",load))
-    });
-    let cpu = Cpu::new(attr(), Some(cpu_render))?;
-    
-
-    let mut cnx = Cnx::new(Position::Top);
-
-
-    let wireless_render=Box::new(|wireless: WirelessInfoStruct| {
-	let text = match wireless.ssid.as_str() {
-	    "Wahlqvist_wifi" => "󰟑",
-	    "SCU" => "󰑴",
-	    "IOT_NET" => "󰘚",
-	    _=> wireless.ssid.as_str(),
-	};
-
-	let icon = match wireless.signal {
-	    d if d > 90 => "󰤨 ",
-	    d if d > 60 => "󰤥 ",
-	    d if d > 40 => "󰤢 ",
-	    d if d > 20 => "󰤟 ",
-	    d if d > 5  => "󰤯 ",
-	    _ => "󰤮 ",
-	};
-
-
-	template(icon.to_string(), text.to_string())
-    });
-
-    let volume_render = Box::new(|info: VolumeInfo|{
-	let text = if !info.if_mute {
-	    format!("{}%",info.volume)
-	} else {
-	    "mute".to_string()
-	};
-
-	let icon = match info.if_mute {
-	    true => "󰝟 ",
-	    false => match info.volume {
-		d if d > 80 => " ",
-		d if d > 50 => "󰕾 ",
-		d if d > 20 => "󰖀 ",
-		_ => "󰕿 ",
-	    }
-	};
-
-	template(icon.to_string(), text)
-    });
-
-    let sensors_render = Box::new(|info: SensorsInfo|{
-	let text = match info.unit {
-	    TempUnit::SI => format!("{}󰔄",info.temp),
-	    TempUnit::Imperial => format!("{}󰔅",info.temp)
-	};
-	let icon = " ".to_string();
-	template(icon, text)
-    });
-    
-    let clock_format = format!("{} {} {}",
-			       template(" ".to_string(),"%d/%m/%y".to_string()),
-			       template("󱨰 ".to_string(),"%a".to_string()),
-			       template("󱑎 ".to_string(),"%H:%M".to_string()),
-    );
-
-
-
-    
-    cnx.add_widget(pager);
-    cnx.add_widget(ActiveWindowTitle::new(attr()));
-    cnx.add_widget(cpu);
-    cnx.add_widget(root);
-    cnx.add_widget(home);
-    cnx.add_widget(Wireless::new(attr(),String::from("wlan0"),Some(Threshold::default()),Some(wireless_render)));
-    cnx.add_widget(Sensors::new(attr(),vec!["Package id 0"],Some(sensors_render)));
-    cnx.add_widget(Volume::new(attr(),Some(volume_render)));
-    cnx.add_widget(battery);
-
-    cnx.add_widget(Clock::new(attr(),Some(clock_format)));
-    cnx.run()?;
-
-    Ok(())
-    }

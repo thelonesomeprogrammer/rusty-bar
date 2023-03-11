@@ -3,10 +3,10 @@ name = "rusty-bar"
 version = "0.1.0"
 authors = ["the lonesome programmer <m@thelonesomeprogrammer.dk>"]
 edition = "2021"
-description = "A simple CNX based bar for X11"
+description = "A simple CNX based bar for wayland"
 repository = "https://github.com/thelonesomeprogrammer/rusty-bar"
 readme = "README.md"
-keywords = ["x11", "status", "bar"]
+keywords = ["wayland", "status", "bar"]
 categories = ["gui"]
 license = "MIT"
 homepage = "https://thelonesomeprogrammer.github.io/rusty-bar/"
@@ -26,8 +26,6 @@ pango = "0.16.5"
 pangocairo = "0.16.3"
 tokio = { version = "1.18.0", features = ["rt", "net", "time", "macros", "rt-multi-thread"] }
 tokio-stream = { version = "0.1.8" }
-xcb = "0.9"
-xcb-util = { version = "0.3", features = ["ewmh"] }
 weathernoaa = "0.2.0"
 iwlib = { version = "0.1"}
 alsa = { version = "0.5.0"}
@@ -40,3 +38,6 @@ serde = { version = "1.0.152"}
 serde_derive = { version = "1.0.152"}
 serde_json = { version = "1.0.91"}
 battery = "0.7.8"
+ron = "0.8.0"
+gtk = "0.17.0"
+gtk-layer-shell = "0.6.0"

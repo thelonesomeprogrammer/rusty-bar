@@ -1,139 +1,217 @@
-use anyhow::{anyhow, Context as _AnyhowContext, Result};
-use std::os::unix::io::AsRawFd;
-use std::os::unix::io::RawFd;
-use std::pin::Pin;
-use std::rc::Rc;
-use std::task::{Context, Poll};
-use tokio::io::unix::AsyncFd;
-use tokio_stream::{self as stream, Stream, StreamExt};
-use xcb::xproto::{PropertyNotifyEvent, PROPERTY_NOTIFY};
-use xcb_util::ewmh;
+use rusty_bar::clock::Clock;
+use rusty_bar::battery::{BatteryView,BatteryInfo};
+use battery::State;
+use rusty_bar::cpu::Cpu;
+use rusty_bar::active_window_title::ActiveWindowTitle;
+use rusty_bar::leftwm::{LeftWM,LeftWMAttributes};
+use rusty_bar::disk_usage::{DiskUsage,DiskInfo};
+use rusty_bar::text::{Font,Color,Attributes,Padding,Threshold};
+use rusty_bar::wireless::{Wireless, WirelessInfoStruct};
+use rusty_bar::sensors::{Sensors, SensorsInfo,TempUnit};
+use rusty_bar::volume::{Volume, VolumeInfo};
+use rusty_bar::widget::Cnx;
+use rusty_bar::bar::Position;
+use anyhow::Result;
 
-// A wrapper around `ewhm::Connection` that implements `mio::Evented`.
-//
-// This is just using `mio::EventedFd`. We have to have a custom wrapper
-// because `mio::EventedFd` only borrows its fd and it's difficult to
-// make it live long enough.
-struct XcbEvented(Rc<ewmh::Connection>);
 
-impl AsRawFd for XcbEvented {
-    fn as_raw_fd(&self) -> RawFd {
-        let conn: &xcb::Connection = &self.0;
-        conn.as_raw_fd()
+
+fn template(icon:String,info:String) -> String{
+    let c1="#00ee00";
+    let c2="#eeeeee";
+    format!("<span foreground=\"{c1}\">{icon}</span><span foreground=\"{c2}\">{info}</span>")
+}
+
+
+
+fn attr() -> Attributes {
+    Attributes{
+	font: Font::new("Hack Nerd Font 11"),
+	fg_color: Color::from_hex("#eeeeee"),
+	bg_color: None,
+	padding: Padding::new(8.0, 8.0, 0.0, 0.0),
     }
 }
 
-// A `Stream` of `xcb::GenericEvent` for the provided `xcb::Connection`.
-pub struct XcbEventStream {
-    conn: Rc<ewmh::Connection>,
-    poll: AsyncFd<XcbEvented>,
-    would_block: bool,
-}
 
-impl XcbEventStream {
-    pub fn new(conn: Rc<ewmh::Connection>) -> Result<XcbEventStream> {
-        let evented = XcbEvented(conn.clone());
-        let poll = AsyncFd::with_interest(evented, tokio::io::Interest::READABLE)?;
 
-        Ok(XcbEventStream {
-            conn,
-            poll,
-            would_block: true,
-        })
-    }
-}
+fn main() -> Result<()> {
+    let focused = Attributes {
+        fg_color: Color::from_hex("#55ff55"),
+	padding: Padding::new(8.0, 8.0, 0.0, 0.0),
+	bg_color: Some(Color::from_hex("#222222")),
+	 ..attr()
+        };
+    let visible = Attributes {
+        fg_color: Color::green(),
+        ..attr()
+    };
+    let busy = Attributes {
+	fg_color: Color::from_hex("#119911"),
+	padding: Padding::new(1.0, 1.0, 0.0, 0.0),
+	..attr()
+    };
+    let empty = Attributes {
+	fg_color: Color::from_hex("#bbbbbb"),
+	padding: Padding::new(1.0, 1.0, 0.0, 0.0),
+	..attr()
+    };    
+    let pager = LeftWM::new("eDP-1".to_string(),LeftWMAttributes {focused,visible,busy,empty});
 
-impl Stream for XcbEventStream {
-    type Item = xcb::GenericEvent;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        let self_ = &mut *self;
-        let mut ready = None;
-        if self_.would_block {
-            match self_.poll.poll_read_ready(cx) {
-                Poll::Ready(Ok(r)) => {
-                    ready = Some(r);
-                    self_.would_block = false;
-                }
-                Poll::Ready(Err(e)) => {
-                    // Unsure when this would happen:
-                    panic!("Error polling xcb::Connection: {e}");
-                }
-                Poll::Pending => return Poll::Pending,
-            }
-        }
-        match self_.conn.poll_for_event() {
-            Some(event) => Poll::Ready(Some(event)),
-            None => {
-                self_.would_block = true;
-                match ready {
-                    None => self.poll_next(cx),
-                    Some(mut r) => {
-                        r.clear_ready();
-                        self.poll_next(cx)
-                    }
-                }
-                // self.poll_next(cx)
-            }
-        }
-    }
-}
+    let battery_render = Box::new(|battery_info: BatteryInfo| {
+    let percentage = battery_info.capacity as i32;
+	let time = match battery_info.time.is_some() {
+		true => battery_info.time.unwrap().value,
+		false => 0.0,
+	};
+	let mut min = (time/60.0).round() as i32;
+	let mut hour = 0;
+	while min>60 {
+	    min-=60;
+	    hour+=1;
+	}
+	let icon = match battery_info.state {
+	    State::Full=> "󰂄 ",
+	    State::Charging=> match percentage {
+		d if d > 90 => "󰂋 ",
+		d if d > 80 => "󰂊 ",
+		d if d > 70 => "󰢞 ",
+		d if d > 60 => "󰂉 ",
+		d if d > 50 => "󰢝 ",
+		d if d > 40 => "󰂈 ",
+		d if d > 30 => "󰂇 ",
+		d if d > 20 => "󰂆 ",
+		d if d > 10 => "󰢜 ",
+		_ => "󰢟 ",
+	    },
+	    State::Discharging=> match percentage {
+		d if d > 90 => "󰂂 ",
+		d if d > 80 => "󰂁 ",
+		d if d > 70 => "󰂀 ",
+		d if d > 60 => "󰁿 ",
+		d if d > 50 => "󰁾 ",
+		d if d > 40 => "󰁽 ",
+		d if d < 30 => "󰁼 ",
+		d if d > 20 => "󰁻 ",
+		d if d > 10 => "󰁺 ",
+		_ => "󰂎 ",
+	    },
+	    State::Unknown=> "󰂑  ",
+	    State::Empty=> "󱉞  ",
+	    State::__Nonexhaustive=> "󰂃 ",
+	};
+	
+    let default_text = if time > 60.0 {
+		format!("{percentage:0.}% {hour}:{min:0>2}")
+	} else {
+		format!("{percentage:0.}% none")
+	};
+	template(String::from(icon),default_text)
+   });
 
-// A `Stream` that listens to `PROPERTY_CHANGE` notifications.
-//
-// By default it listens to `PROPERTY_CHANGE` notifications for the provided
-// `properties` on the root window. The `ewhm::Connection` is returned so that
-// the caller may listen to `PROPERTY_CHANGE` notifications on additional
-// windows.
-pub fn xcb_properties_stream(
-    properties: &[&str],
-) -> Result<(Rc<ewmh::Connection>, impl Stream<Item = ()>)> {
-    let (xcb_conn, screen_idx) =
-        xcb::Connection::connect(None).context("Failed to connect to X server")?;
-    let root_window = xcb_conn
-        .get_setup()
-        .roots()
-        .nth(screen_idx as usize)
-        .ok_or_else(|| anyhow!("Invalid screen"))?
-        .root();
-    let ewmh_conn = ewmh::Connection::connect(xcb_conn)
-        .map_err(|(e, _)| e)
-        .context("Failed to wrap xcb::Connection in ewmh::Connection")?;
-    let conn = Rc::new(ewmh_conn);
+    let battery = BatteryView::new(attr(), Color::red(), Some(battery_render));
 
-    let only_if_exists = true;
-    let properties = properties
-        .iter()
-        .map(|property| -> Result<xcb::Atom> {
-            let reply = xcb::intern_atom(&conn, only_if_exists, property).get_reply()?;
-            Ok(reply.atom())
-        })
-        .collect::<Result<Vec<_>>>()
-        .context("Failed to intern atoms")?;
+   
+    let root_render=Box::new(|disk_info: DiskInfo| {
+        let left = (disk_info.used.get_bytes()*100)/(disk_info.total.get_bytes());
+        let disk_text = format!("{left}%");
+        template(String::from(" "), disk_text)
+    });
+    let root = DiskUsage::new(attr(), String::from("/"), Some(root_render)); 
 
-    // Register for all PROPERTY_CHANGE events. We'll filter out the ones
-    // that are interesting below.
-    let attributes = [(xcb::CW_EVENT_MASK, xcb::EVENT_MASK_PROPERTY_CHANGE)];
-    xcb::change_window_attributes(&conn, root_window, &attributes);
-    conn.flush();
 
-    let xcb_stream = XcbEventStream::new(conn.clone())?;
-    let stream = xcb_stream.filter_map(move |event| {
-        if event.response_type() == PROPERTY_NOTIFY {
-            let event: &PropertyNotifyEvent = unsafe { xcb::cast_event(&event) };
-            if properties.iter().any(|p| *p == event.atom()) {
-                // We don't actually care about the event, just that
-                // it occurred.
-                return Some(());
-            }
-        }
-        None
+    let home_render=Box::new(|disk_info: DiskInfo| {
+        let left = (disk_info.used.get_bytes()*100)/(disk_info.total.get_bytes());
+        let disk_text = format!("{left}%");
+        template(String::from(" "), disk_text)
+    });
+    let home = DiskUsage::new(attr(), String::from("/home"), Some(home_render)); 
+
+
+    let cpu_render = Box::new(|load| {
+	
+        template(String::from(" "),format!("{:2}%",load))
+    });
+    let cpu = Cpu::new(attr(), Some(cpu_render))?;
+    
+
+    let mut cnx = Cnx::new(Position::Top);
+
+
+    let wireless_render=Box::new(|wireless: WirelessInfoStruct| {
+	let text = match wireless.ssid.as_str() {
+	    "Wahlqvist_wifi" => "󰟑",
+	    "SCU" => "󰑴",
+	    "IOT_NET" => "󰘚",
+	    _=> wireless.ssid.as_str(),
+	};
+
+	let icon = match wireless.signal {
+	    d if d > 90 => "󰤨 ",
+	    d if d > 60 => "󰤥 ",
+	    d if d > 40 => "󰤢 ",
+	    d if d > 20 => "󰤟 ",
+	    d if d > 5  => "󰤯 ",
+	    _ => "󰤮 ",
+	};
+
+
+	template(icon.to_string(), text.to_string())
     });
 
-    // Pretend there was an initial property change to get the initial
-    // contents of the widget, then allow our stream of XCB events to
-    // call the callback for actual changes.
-    let stream = stream::once(()).chain(stream);
+    let volume_render = Box::new(|info: VolumeInfo|{
+	let text = if !info.if_mute {
+	    format!("{}%",info.volume)
+	} else {
+	    "mute".to_string()
+	};
 
-    Ok((conn, stream))
-}
+	let icon = match info.if_mute {
+	    true => "󰝟 ",
+	    false => match info.volume {
+		d if d > 80 => " ",
+		d if d > 50 => "󰕾 ",
+		d if d > 20 => "󰖀 ",
+		_ => "󰕿 ",
+	    }
+	};
+
+	template(icon.to_string(), text)
+    });
+
+    let sensors_render = Box::new(|info: SensorsInfo|{
+	let temp = &info.temp.as_str()[..info.temp.len()-2].to_string();
+	let tempnr: i32 = temp.parse().unwrap();
+	    
+	let text = match info.unit {
+	    TempUnit::SI => format!("{}󰔄",tempnr),
+	    TempUnit::Imperial => format!("{}󰔅",tempnr)
+	};
+	let icon = " ".to_string();
+	template(icon, text)
+    });
+    
+    let clock_format = format!("{} {} {}",
+			       template(" ".to_string(),"%d/%m/%y".to_string()),
+			       template("󱨰 ".to_string(),"%a".to_string()),
+			       template("󱑎 ".to_string(),"%H:%M".to_string()),
+    );
+
+
+
+    
+    cnx.add_widget(pager);
+    cnx.add_widget(ActiveWindowTitle::new(attr()));
+    cnx.add_widget(cpu);
+    cnx.add_widget(root);
+    cnx.add_widget(home);
+    cnx.add_widget(Wireless::new(attr(),String::from("wlan0"),Some(Threshold::default()),Some(wireless_render)));
+    cnx.add_widget(Sensors::new(attr(),vec!["Package id 0"],Some(sensors_render)));
+    cnx.add_widget(Volume::new(attr(),Some(volume_render)));
+    cnx.add_widget(battery);
+
+    cnx.add_widget(Clock::new(attr(),Some(clock_format)));
+    cnx.run()?;
+
+    Ok(())
+    }

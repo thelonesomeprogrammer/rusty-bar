@@ -12,7 +12,7 @@ arch=("x86_64")
 provides=("rusty-bar")
 conflicts=("rusty-bar")
 source=("https://github.com/thelonesomeprogrammer/rusty-bar/releases/download/v$pkgver/rusty-bar-$pkgver-x86_64.tar.gz")
-sha256sums=("ffdb13aed6896fb4de36d8cd7cf6f27f80be385839cb8796f433cdee0aa75f25")
+sha256sums=("1a4cbac073452725073f474fe62259fc4f000212f0f4d715128704c6a643d67a")
 
 package() {
     install -Dm755 rusty-bar -t "$pkgdir/usr/bin"

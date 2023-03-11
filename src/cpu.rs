@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use crate::text::{Attributes, Text};
-use crate::widget::{Widget, WidgetStream};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -13,7 +12,7 @@ use tokio_stream::StreamExt;
 pub struct Cpu {
     attr: Attributes,
     cpu_data: CpuData,
-    render: Option<Box<dyn Fn(u64) -> String>>,
+    format: String,
 }
 
 impl Cpu {
@@ -53,16 +52,16 @@ impl Cpu {
     /// # }
     /// # fn main() { run().unwrap(); }
     /// ```
-    pub fn new(attr: Attributes, render: Option<Box<dyn Fn(u64) -> String>>) -> Result<Self> {
+    pub fn new(attr: Attributes,format:String) -> Result<Self>{
         let cpu_data = CpuData::get_values()?;
         Ok(Cpu {
             attr,
             cpu_data,
-            render,
+            format
         })
     }
 
-    fn tick(&mut self) -> Result<Vec<Text>> {
+    pub fn tick(&mut self) -> Result<Vec<Text>> {
         let cpu_data = CpuData::get_values()?;
 
         // https://github.com/jaor/xmobar/blob/61d075d3c275366c3344d59c058d7dd0baf21ef2/src/Xmobar/Plugins/Monitors/Cpu.hs#L128
@@ -79,10 +78,7 @@ impl Cpu {
         };
 
         let cpu_usage = (percentage * 100.0) as u64;
-        let text = self
-            .render
-            .as_ref()
-            .map_or(format!("{cpu_usage} %"), |x| (x)(cpu_usage));
+        let text = self.format.clone().replace("load", cpu_usage.to_string().as_str());
         self.cpu_data = current;
         let texts = vec![Text {
             attr: self.attr.clone(),
@@ -139,14 +135,5 @@ impl CpuData {
             _ => return Err(anyhow!("Missing data in /proc/stat")),
         }
         Ok(cpu_data)
-    }
-}
-
-impl Widget for Cpu {
-    fn into_stream(mut self: Box<Self>) -> Result<WidgetStream> {
-        let ten_seconds = Duration::from_secs(10);
-        let interval = time::interval(ten_seconds);
-        let stream = IntervalStream::new(interval).map(move |_| self.tick());
-        Ok(Box::pin(stream))
     }
 }
