@@ -1,6 +1,6 @@
 pub mod cpu;
-/*pub mod clock;
-pub mod battery;
+pub mod clock;
+/*pub mod battery;
 pub mod disk_usage;
 //pub mod active_window_title;
 pub mod volume;
