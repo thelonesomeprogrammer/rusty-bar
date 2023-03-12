@@ -20,7 +20,7 @@ struct ActiveWorkspace<'a> {
 
 
 fn get_workspaces(_lifetime:&str) -> Result<HashMap<&str, ActiveWorkspace<'_>>> {
-
+    let cmd = "hyprctl workspaces";
 
 
     let re: Regex = Regex::new(
