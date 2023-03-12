@@ -1,10 +1,6 @@
 use anyhow::Result;
-use crate::text::{Attributes, Text};
 use std::process::Command as Process;
 use std::time::Duration;
-use tokio::time;
-use tokio_stream::wrappers::IntervalStream;
-use tokio_stream::StreamExt;
 
 pub struct Command {
     attr: Attributes,

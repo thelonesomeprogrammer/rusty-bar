@@ -1,12 +1,7 @@
 use anyhow::{anyhow, Result};
-use crate::text::{Attributes, Text};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::time::Duration;
-use tokio::time;
-use tokio_stream::wrappers::IntervalStream;
-use tokio_stream::StreamExt;
 use gtk::Label;
 use gtk::prelude::WidgetExt;
 use gtk::prelude::LabelExt;
@@ -15,14 +10,13 @@ use gtk::prelude::ContainerExt;
 
 /// Represents CPU widget used to show current CPU consumptiong
 pub struct Cpu {
-    attr: Attributes,
     cpu_data: CpuData,
     format: String,
     label: Label,
 }
 
 impl Cpu {
-    pub fn new(attr: Attributes, format:String, contain:&Box) -> Result<Self>{
+    pub fn new(format:String, contain:&Box) -> Result<Self>{
         let label = Label::new(None);
         label.set_widget_name("CPU");
         label.set_use_markup(true);
@@ -30,7 +24,6 @@ impl Cpu {
         contain.add(&label);
         let cpu_data = CpuData::get_values()?;
         Ok(Cpu {
-            attr,
             cpu_data,
             format,
             label

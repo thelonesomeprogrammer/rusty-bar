@@ -2,10 +2,11 @@ use gtk::gdk::*;
 use gtk::gio::ApplicationFlags;
 use gtk::prelude::*;
 use gtk::*;
+use gtk::traits::SettingsExt;
 use gtk_layer_shell::Edge;
+use pango::FontDescription;
 use rusty_bar::cpu::Cpu;
 use rusty_bar::clock::Clock;
-use rusty_bar::text::{Attributes, Color, Font, Padding};
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -79,7 +80,7 @@ fn main() {
         };
         let config: RustyBar = ron::from_str(conf.as_str()).expect("error in config");
         */
-
+        Settings::for_screen(&gtk::prelude::WidgetExt::screen(&window).expect("msg")).expect("fuck").set_gtk_font_name(Some("Hack Nerd Font"));
         window.connect_screen_changed(set_visual);
         window.connect_draw(draw);
 
@@ -145,7 +146,10 @@ fn draw(_: &ApplicationWindow, ctx: &cairo::Context) -> Inhibit {
     // Applys
     ctx.set_source_rgba(0.1, 0.1, 0.1, 0.5);
     ctx.set_operator(cairo::Operator::Screen);
-    ctx.paint().expect("thing");
+    let layout=pangocairo::functions::create_layout(ctx);
+    layout.set_font_description(Some(&FontDescription::from_string("Hack Nerd Font")));
+    pangocairo::functions::show_layout(ctx, &layout);
+
     Inhibit(false)
 }
 fn build_widgets(window: &ApplicationWindow /*,config:RustyBar*/) {
@@ -203,11 +207,11 @@ fn wedgit(wed: &Widget, cont: &Box) {
         WType::CPU => {
             let icon = wed.icon.clone().unwrap_or(" ".to_string());
             let text = if wed.format.is_none() {
-                format!("<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>load</span>")
+                format!("<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>load%</span>")
             } else {
                 wed.format.clone().unwrap()
             };
-            let mut cpu = Cpu::new(attr(), text, cont).unwrap();
+            let mut cpu = Cpu::new(text, cont).unwrap();
             let mut tick = move || {
                 cpu.tick();
                 glib::Continue(true)
@@ -221,7 +225,7 @@ fn wedgit(wed: &Widget, cont: &Box) {
         WType::CLOCK => {
             let icon = wed.icon.clone().unwrap_or(" ".to_string());
             let text = if wed.format.is_none() {
-                format!("<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>%Y-%m-%d %a %I:%M %p</span>")
+                format!("<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>%d/%m/%Y </span><span foreground='#229922'>󱨰 </span><span foreground='#bbbbbb'>%a </span><span foreground='#229922'>󱑎 </span><span foreground='#bbbbbb'>%H:%M </span>")
             } else {
                 wed.format.clone().unwrap()
             };
@@ -231,7 +235,7 @@ fn wedgit(wed: &Widget, cont: &Box) {
                 glib::Continue(true)
             };
             tick();
-            glib::timeout_add_local(Duration::from_millis(1000), tick);
+            glib::timeout_add_local(Duration::from_millis(10000), tick);
         }
         WType::Temps => {}
         WType::Battry => {}
@@ -240,14 +244,5 @@ fn wedgit(wed: &Widget, cont: &Box) {
         WType::Wireless => {}
         WType::Workspaces => {}
         WType::ActiveWindow => {}
-    }
-}
-
-fn attr() -> Attributes {
-    Attributes {
-        font: Font::new("Hack Nerd Font 11"),
-        fg_color: Color::from_hex("#eeeeee"),
-        bg_color: None,
-        padding: Padding::new(8.0, 8.0, 0.0, 0.0),
     }
 }

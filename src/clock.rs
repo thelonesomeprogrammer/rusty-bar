@@ -1,12 +1,8 @@
-use anyhow::Result;
-use std::time::Duration;
-use tokio::time;
 use gtk::prelude::WidgetExt;
 use gtk::prelude::LabelExt;
 use gtk::*;
 use gtk::prelude::ContainerExt;
 use gtk::Label;
-use crate::text::{Attributes, Text};
 
 /// Shows the current time and date.
 ///
@@ -30,7 +26,6 @@ impl Clock {
 
     pub fn tick(&self){
         let now = chrono::Local::now();
-        let clock_formating="%Y-%m-%d %a %I:%M %p";
         let text = now.format(&self.format).to_string();
         self.label.set_markup(&text.as_str());
     }

@@ -1,12 +1,10 @@
 use anyhow::{anyhow, Context, Result};
-use crate::text::{Attributes, Text};
+
 use regex::Regex;
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 use tokio::time;
-use tokio_stream::wrappers::IntervalStream;
-use tokio_stream::StreamExt;
 
 #[derive(Debug, PartialEq)]
 struct Value<'a> {

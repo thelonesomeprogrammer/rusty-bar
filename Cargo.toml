@@ -3,7 +3,7 @@ name = "rusty-bar"
 version = "0.1.0"
 authors = ["the lonesome programmer <m@thelonesomeprogrammer.dk>"]
 edition = "2021"
-description = "A simple CNX based bar for wayland"
+description = "A simple icon loving bar for wayland"
 repository = "https://github.com/thelonesomeprogrammer/rusty-bar"
 readme = "README.md"
 keywords = ["wayland", "status", "bar"]
@@ -14,26 +14,20 @@ homepage = "https://thelonesomeprogrammer.github.io/rusty-bar/"
 [dependencies]
 device_query = "1.1.1"
 anyhow = "1.0.41"
-async-stream = "0.3.3"
-cairo-rs = { version = "0.16.7", features = ["xcb"] }
-cairo-sys-rs = "0.16.3" 
+cairo-rs = "0.17.0"
+cairo-sys-rs = "0.17.0" 
 chrono = "0.4"
-colors-transform = "0.2.11"
 futures = "0.3"
 lazy_static = "1.4"
-ordered-float = "1.0"
-pango = "0.16.5"
-pangocairo = "0.16.3"
-tokio = { version = "1.18.0", features = ["rt", "net", "time", "macros", "rt-multi-thread"] }
-tokio-stream = { version = "0.1.8" }
+pango = "0.17.0"
+pangocairo = "0.17.0"
 weathernoaa = "0.2.0"
 iwlib = { version = "0.1"}
-alsa = { version = "0.5.0"}
+alsa = { version = "0.7.0"}
 regex = "1.5"
-nix = "0.20.0"
 byte-unit = "4.0.12"
 reqwest = { version = "0.11" }
-process-stream = { version = "0.4.1"}
+#process-stream = { version = "0.4.1"}
 serde = { version = "1.0.152"}
 serde_derive = { version = "1.0.152"}
 serde_json = { version = "1.0.91"}

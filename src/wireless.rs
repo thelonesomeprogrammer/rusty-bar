@@ -1,18 +1,10 @@
 use anyhow::Result;
-use crate::text::{Attributes, Text, Threshold};
 use iwlib::*;
 use std::time::Duration;
-use tokio::time;
-use tokio_stream::wrappers::IntervalStream;
-use tokio_stream::StreamExt;
 
 /// Wireless widget to show wireless information for a particular ESSID
 pub struct Wireless {
-    attr: Attributes,
     interface: String,
-    update_interval: Duration,
-    threshold: Option<Threshold>,
-    render: Option<Box<dyn Fn(WirelessInfoStruct) -> String>>,
 
 }
 
@@ -63,13 +55,10 @@ impl Wireless {
     /// # }
     /// # fn main() { run().unwrap(); }
     /// ```
-    pub fn new(attr: Attributes, interface: String, threshold: Option<Threshold>, render: Option<Box<dyn Fn(WirelessInfoStruct) -> String>>) -> Wireless {
+    pub fn new(interface: String, threshold: Option<Threshold>, render: Option<Box<dyn Fn(WirelessInfoStruct) -> String>>) -> Wireless {
         Wireless {
-            update_interval: Duration::from_secs(3600),
             interface,
-            attr,
-            threshold,
-	    render,
+
         }
     }
 
@@ -116,14 +105,5 @@ impl Wireless {
             stretch: false,
             markup: markup,
         }]
-    }
-}
-
-impl Widget for Wireless {
-    fn into_stream(self: Box<Self>) -> Result<WidgetStream> {
-        let interval = time::interval(self.update_interval);
-        let stream = IntervalStream::new(interval).map(move |_| Ok(self.tick()));
-
-        Ok(Box::pin(stream))
     }
 }
