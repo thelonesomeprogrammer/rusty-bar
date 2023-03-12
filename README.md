@@ -3,7 +3,7 @@
 
 
 ```
-<img src="useless sutff for github/rusty bar logo.png" alt="rusty-bar logo">
+<img src="useless sutff for github/rusty bar logo.jpg" alt="rusty-bar logo">
 ```
 
 
