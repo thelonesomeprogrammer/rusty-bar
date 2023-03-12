@@ -2,9 +2,9 @@
 
 
 
-```
-<img src="useless sutff for github/logo.png" alt="rusty-bar logo">
-```
+
+<img src="useless sutff for github/rusty bar logo.jpg" alt="rusty-bar logo">
+
 
 
 A simple [CNX](https://github.com/mjkillough/cnx) based bar for  wayland
