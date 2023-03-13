@@ -7,6 +7,7 @@ use gtk_layer_shell::Edge;
 use pango::FontDescription;
 use rusty_bar::cpu::Cpu;
 use rusty_bar::clock::Clock;
+use rusty_bar::workspaces::Workspaces;
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -198,6 +199,7 @@ fn build_widgets(window: &ApplicationWindow /*,config:RustyBar*/) {
     // this is temporary code while porting to wayland
     wedgit(&Widget {wtype: WType::CPU,callback: None,cmd: None,format: None,nomarkup: None,tooltip: None,notoolmarkup: None,icon: None,replace_with_icons: None,animate: None,warning: None,},&right,);
     wedgit(&Widget {wtype: WType::CLOCK,callback: None,cmd: None,format: None,nomarkup: None,tooltip: None,notoolmarkup: None,icon: None,replace_with_icons: None,animate: None,warning: None,},&centered,);
+    wedgit(&Widget {wtype: WType::Workspaces,callback: None,cmd: None,format: None,nomarkup: None,tooltip: None,notoolmarkup: None,icon: None,replace_with_icons: None,animate: None,warning: None,},&left,);
 
     // Prepare and show all of the widgets.
     window.show_all();
@@ -229,8 +231,8 @@ fn wedgit(wed: &Widget, cont: &Box) {
             } else {
                 wed.format.clone().unwrap()
             };
-            let mut clock = Clock::new(text, cont);
-            let mut tick = move || {
+            let clock = Clock::new(text, cont);
+            let tick = move || {
                 clock.tick();
                 glib::Continue(true)
             };
@@ -242,7 +244,9 @@ fn wedgit(wed: &Widget, cont: &Box) {
         WType::Script => {}
         WType::Systray => {}
         WType::Wireless => {}
-        WType::Workspaces => {}
+        WType::Workspaces => {
+            let _workspaces = Workspaces::new(cont);
+        }
         WType::ActiveWindow => {}
     }
 }
