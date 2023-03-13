@@ -20,7 +20,9 @@ struct ActiveWorkspace<'a> {
 
 
 fn get_workspaces(_lifetime:&str) -> Result<HashMap<&str, ActiveWorkspace<'_>>> {
-    let cmd = "hyprctl workspaces";
+    let output = Command::new("hyprctl workspaces")
+    .output()
+    .context("Failed to run `sensors`")?;
 
 
     let re: Regex = Regex::new(

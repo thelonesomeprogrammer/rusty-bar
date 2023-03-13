@@ -71,12 +71,3 @@ impl Command {
         texts
     }
 }
-
-impl Widget for Command {
-    fn into_stream(self: Box<Self>) -> Result<WidgetStream> {
-        let interval = time::interval(self.update_interval);
-        let stream = IntervalStream::new(interval).map(move |_| Ok(self.tick()));
-
-        Ok(Box::pin(stream))
-    }
-}
