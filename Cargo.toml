@@ -1,0 +1,39 @@
+[package]
+name = "rusty-bar"
+version = "0.1.0"
+authors = ["the lonesome programmer <m@thelonesomeprogrammer.dk>"]
+edition = "2021"
+description = "A simple icon loving bar for wayland"
+repository = "https://github.com/thelonesomeprogrammer/rusty-bar"
+readme = "README.md"
+keywords = ["wayland", "status", "bar"]
+categories = ["gui"]
+license = "GNU GPLv3"
+homepage = "https://github.com/thelonesomeprogrammer/rusty-bar/"
+
+[dependencies]
+anyhow = "1.0.70"
+cairo-rs = "0.17.0"
+cairo-sys-rs = "0.17.0" 
+chrono = "0.4.24"
+pango = "0.17.4"
+pangocairo = "0.17.0"
+iwlib = { version = "0.1"}
+alsa = { version = "0.7.0"}
+regex = "1.7.3"
+serde = { version = "1.0.159"}
+serde_derive = { version = "1.0.159"}
+battery = "0.7.8"
+ron = "0.8.0"
+gtk = "0.17.1"
+gtk-layer-shell = "0.6.1"
+psutil = "3.2.2"
+dirs = "5.0.0"
+
+[package.metadata.deb]
+assets = [
+    ["target/release/rusty-bar", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/rusty_bar/README", "644"],
+    ["example config/rustyconf.ron","etc/rusty-bar/","755"],
+    ["example config/rustyconf.ron",".config/rusty-bar/","755"],
+]
