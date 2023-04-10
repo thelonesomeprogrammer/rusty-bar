@@ -1,7 +1,7 @@
 use gtk::{Box,Label};
 use gtk::prelude::{LabelExt,ContainerExt};
 use psutil::memory::virtual_memory;
-use crate::AniStr;
+use crate::{AniStr,Replacement,replacements,animate};
 
 
 
@@ -9,13 +9,24 @@ pub struct RAM {
     label: Label,
     format: String,
 	animation: Vec<AniStr>,
+	replacements: Vec<Replacement>,
 }
 
 impl RAM {
-    pub fn new<'a>(format:String, con:&Box, refanimation:&'a Option<Vec<AniStr>>) -> Self {
+    pub fn new<'a>(
+		format:String, 
+		con:&Box, 
+		refanimation:&'a Option<Vec<AniStr>>,
+		refreplacement:&'a Option<Vec<Replacement>>,
+	) -> Self {
 		let label = Label::new(None);
 		con.add(&label);
-		RAM{label, format, animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec()}
+		RAM{
+			label, 
+			format, 
+			animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec(),
+			replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(),
+		}
     }
 
     pub fn tick(&self){
@@ -24,14 +35,14 @@ impl RAM {
 		let load = if ram.is_ok() {
 			let percentage = ram.unwrap().percent().round() as u8;
 			format = if self.animation.len() != 0 {
-				crate::animate(percentage, self.animation.to_vec(), true) 
+				animate(percentage, self.animation.to_vec(), true) 
 			} else {
 				self.format.clone()
 			};
 	    	format!("{percentage:0>2}%")
 		} else {
 			format = if self.animation.len() != 0 {
-				crate::animate(0, self.animation.to_vec(), false) 
+				animate(0, self.animation.to_vec(), false) 
 			} else {
 				self.format.clone()
 			};
@@ -40,7 +51,7 @@ impl RAM {
 
 
 
-		let text = format.as_str().replace("load", &load);
+		let text = replacements(format.as_str().replace("load", &load),self.replacements.to_vec());
 		self.label.set_markup(&text);
     }
 }

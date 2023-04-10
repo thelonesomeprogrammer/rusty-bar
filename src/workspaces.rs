@@ -7,6 +7,7 @@ use gtk::Button;
 use gtk::*;
 use regex::Regex;
 use std::process::Command;
+use crate::{Replacement,replacements};
 
 struct LabeledButton {
     pub label: Label,
@@ -17,6 +18,7 @@ pub struct Workspaces {
     workspaces: Box,
     buttons: Vec<LabeledButton>,
     format: String,
+	replacements: Vec<Replacement>,
     
 }
 
@@ -59,21 +61,23 @@ fn get_workspaces() -> Vec<ActiveWorkspace> {
 }
 
 impl Workspaces {
-    pub fn new(format:String,con: &Box) -> Self {
+    pub fn new<'a>(
+		format:String,
+		con: &Box,
+		refreplacement:&'a Option<Vec<Replacement>>,
+	) -> Workspaces {
         let container = Box::new(Orientation::Horizontal, 0);
         let mut workspaces = get_workspaces();
 		workspaces.sort_by(|a, b| a.id.cmp(&b.id));
 		let mut buttons = Vec::new();
         for i in workspaces.iter() {
-            let but = Button::new();
-	    	let lab = Label::new(None);
-            but.set_border_width(0);
-            but.set_relief(ReliefStyle::None);
-	    	let text = format.as_str().replace("load", "").as_str().replace("name",&format!("{}",i.name));
-	    	lab.set_markup(&text);
-	    	but.set_widget_name(&i.name);
-	    	but.add(&lab);
-            but.connect_clicked(|button| {
+            let button = Button::new();
+	    	let label = Label::new(None);
+            button.set_border_width(0);
+            button.set_relief(ReliefStyle::None);
+	    	button.set_widget_name(&i.name);
+	    	button.add(&label);
+            button.connect_clicked(|button| {
                 if Command::new("hyprctl")
                     .args([
                         "dispatch",
@@ -84,75 +88,96 @@ impl Workspaces {
 						print!("hyprctl could not be reached");
 					}
             });
-            container.add(&but);
-	    	buttons.push(LabeledButton{label: lab ,button: but});
+            container.add(&button);
+	    	buttons.push(LabeledButton{label,button});
         }
         con.add(&container);
-        Workspaces { workspaces: container, buttons, format }
+        Workspaces { 
+			workspaces: container, 
+			buttons, 
+			format,
+			replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(),
+		}
     }
 
 
 
     pub fn tick(&mut self){
-	let mut workspaces = get_workspaces();
-	
-	workspaces.sort_by(|a, b| a.id.cmp(&b.id));
-	
-	match workspaces.len()as i8-self.workspaces.children().len()as i8 {
-	    d if d < 0 =>{
-		for i in 0..workspaces.len()-1{
-		    let text = self.format.as_str().replace("load", "").as_str()
-			.replace("name",&format!("{}",workspaces[i].name));
-		    self.buttons[i].label.set_markup(&text);
-		    self.buttons[i].button.set_widget_name(&workspaces[i].name)
+		let mut workspaces = get_workspaces();
+		
+		workspaces.sort_by(|a, b| a.id.cmp(&b.id));
+		
+		match workspaces.len()as i8-self.workspaces.children().len()as i8 {
+			d if d < 0 => {
+				for i in 0..workspaces.len()-1{
+					let text = replacements(
+						self.format.as_str().replace("load", "").as_str()
+							.replace("name",&format!("{}",workspaces[i].name)),
+						self.replacements.to_vec()
+					
+					);
+					self.buttons[i].label.set_markup(&text);
+					self.buttons[i].button.set_widget_name(&workspaces[i].name)
+				}
+				for i in workspaces.len()..self.workspaces.children().len(){
+					self.buttons.pop();
+					self.workspaces.children()[i].hide();
+					self.workspaces.remove(&self.workspaces.children()[i]);
+				}
+			},
+
+			d if d > 0 => {
+				for i in 0..self.buttons.len()-1{
+					let text = replacements(
+						self.format.as_str().replace("load", "").as_str()
+							.replace("name",&format!("{}",workspaces[i].name)),
+						self.replacements.to_vec()
+					);
+					self.buttons[i].label.set_markup(&text);
+					self.buttons[i].button.set_widget_name(&workspaces[i].name)
+				}
+				for i in self.workspaces.children().len()..workspaces.len() {
+					let button = Button::new();
+					let label = Label::new(None);
+					button.set_border_width(0);
+					button.set_relief(ReliefStyle::None);
+					let text = replacements(
+						self.format.as_str().replace("load", "").as_str()
+							.replace("name",&format!("{}",workspaces[i].name)),
+						self.replacements.to_vec()
+					);
+					label.set_markup(&text);
+					button.add(&label);
+					button.connect_clicked(|button| {
+						if Command::new("hyprctl")
+							.args([
+							"dispatch",
+							"workspace",
+							&format!("name:{}", button.widget_name()),
+							])
+							.output().is_err() {
+								print!("hyprctl could not be reached");
+							}
+					});
+					button.set_widget_name(&workspaces[i].name);
+					button.show_all();
+					self.workspaces.add(&button);
+					self.buttons.push(LabeledButton { label, button })
+				}
+			},
+			
+			d if d == 0 => {
+				for i in 0..self.buttons.len(){
+					let text = replacements(
+						self.format.as_str().replace("load", "").as_str()
+							.replace("name",&format!("{}",workspaces[i].name)),
+						self.replacements.to_vec()		
+					);
+					self.buttons[i].label.set_markup(&text);
+					self.buttons[i].button.set_widget_name(&workspaces[i].name)
+				}
+			},
+			_ => print!("workspases comparasin failed"),
 		}
-		for i in workspaces.len()..self.workspaces.children().len(){
-		    self.buttons.pop();
-		    self.workspaces.children()[i].hide();
-		    self.workspaces.remove(&self.workspaces.children()[i]);
-		}
-	    }
-,
-	    d if d > 0 =>{
-		for i in 0..self.buttons.len()-1{
-		    let text = self.format.as_str().replace("load", "").as_str()
-			.replace("name",&format!("{}",workspaces[i].name));
-		    self.buttons[i].label.set_markup(&text);
-		    self.buttons[i].button.set_widget_name(&workspaces[i].name)
-		}
-		for i in self.workspaces.children().len()..workspaces.len() {
-		    let but = Button::new();
-		    let lab = Label::new(None);
-		    but.set_border_width(0);
-		    but.set_relief(ReliefStyle::None);
-		    let text = self.format.as_str().replace("load", "").as_str()
-			.replace("name",&format!("{}",workspaces[i].name));
-		    lab.set_markup(&text);
-		    but.add(&lab);
-		    but.connect_clicked(|button| {
-				if Command::new("hyprctl")
-			    	.args([
-					"dispatch",
-					"workspace",
-					&format!("name:{}", button.widget_name()),
-			    	])
-			    	.output().is_err() {
-						print!("hyprctl could not be reached");
-					}
-		    });
-		    but.set_widget_name(&workspaces[i].name);
-		    but.show_all();
-		    self.workspaces.add(&but);
-		    self.buttons.push(LabeledButton { label: lab, button: but })
-		}},
-	    d if d == 0 =>
-		for i in 0..self.buttons.len(){
-		    let text = self.format.as_str().replace("load", "").as_str()
-			.replace("name",&format!("{}",workspaces[i].name));
-		    self.buttons[i].label.set_markup(&text);
-		    self.buttons[i].button.set_widget_name(&workspaces[i].name)
-		},
-	    _ =>print!("workspases comparasin failed"),
-	}
     }
 }

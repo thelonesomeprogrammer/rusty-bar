@@ -3,23 +3,17 @@ use gtk::prelude::ContainerExt;
 use gtk::prelude::LabelExt;
 use gtk::Label;
 use gtk::*;
-use crate::AniStr;
-/// Represent Battery's operating status
+use crate::{AniStr,Replacement,replacements,animate};
 
 /// Shows battery charge percentage
 ///
 /// This widget shows the battery's current charge percentage.
-///
-/// When the battery has less than 10% charge remaining, the widget's text will
-/// change to the specified `warning_color`.
-///
-/// Battery charge information is read from [`/sys/class/power_supply/BAT0/`].
-///
-/// [`/sys/class/power_supply/BAT0/`]: https://www.kernel.org/doc/Documentation/power/power_supply_class.txt
+
 pub struct BatteryView {
     label: Label,
     format: String,
     animation: Vec<AniStr>,
+    replacements: Vec<Replacement>,
 }
 
 /// Represent Battery information
@@ -35,11 +29,22 @@ struct BatteryInfo {
 
 
 impl BatteryView {
-    pub fn new<'a>(format:String, con: &Box, refanimation:&'a Option<Vec<AniStr>>) -> BatteryView {
+    pub fn new<'a>(
+        format:String, 
+        con: &Box, 
+        refanimation:&'a Option<Vec<AniStr>>,
+        refreplacement:&'a Option<Vec<Replacement>>,
+    ) -> BatteryView {
         let label = Label::new(None);
 	    con.add(&label);
 
-	    BatteryView { label, format, animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec() }
+	    BatteryView { 
+            label, 
+            format, 
+            animation: 
+            refanimation.as_ref().unwrap_or(&Vec::new()).to_vec(), 
+            replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(), 
+        }
     }
 
     fn get_value(&mut self) -> Option<BatteryInfo> {
@@ -112,17 +117,18 @@ impl BatteryView {
 };
 
 	    let format = if self.animation.len() != 0 {
-	        crate::animate(percentage, self.animation.to_vec(), is_cherching)
+	        animate(percentage, self.animation.to_vec(), is_cherching)
 	    } else {
 	        self.format.clone()
 	    };
 	
-	    let text = format.clone().as_str()
+	    let text = replacements(format.clone().as_str()
 	        .replace("load",&format!("{percentage:0>2}%").as_str()).as_str()
 	        .replace("time", &timetext).as_str()
 	        .replace("Min", &format!("{:0>3}",(time/60.0).round() as i32)).as_str()
 	        .replace("min", &format!("{min:0>2}")).as_str()
-	        .replace("hour", &format!("hour"));
+	        .replace("hour", &format!("hour")),
+            self.replacements.to_vec());
 	    self.label.set_markup(&text)
     }
 }

@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use std::path::PathBuf;
 use rusty_bar::AniStr;
+use rusty_bar::Replacement;
 
 #[derive(Deserialize,Serialize,Debug)]
 enum Pos {
@@ -55,11 +56,6 @@ struct Widget {
 }
 
 #[derive(Deserialize,Serialize,Debug)]
-struct Replacement{
-    from: String,
-    to: String,
-}
-#[derive(Deserialize,Serialize,Debug)]
 struct Widgets {
     left: Option<Vec<Widget>>,
     center: Option<Vec<Widget>>,
@@ -68,7 +64,6 @@ struct Widgets {
 #[derive(Deserialize,Serialize,Debug)]
 struct RustyBar {
     pos: Option<Pos>,
-    noicons: Option<bool>,
     backgrund: Option<String>,
     foregrund: Option<String>,
     iconcolor: Option<String>,
@@ -196,6 +191,13 @@ fn main() {
                 AniStr{treash:0  ,format:layout(icon.clone(),"#229922".to_string(),"#bbbbbb".to_string()),condition:None},
 	        ];
 
+
+            let wifi_replacements = vec![
+                Replacement{ from:"Wahlqvist_wifi".to_string(),to: "󰟑".to_string(),},
+                Replacement{ from:"SCU".to_string(),to: "󰑴".to_string(),},
+                Replacement{ from:"IOT_NET".to_string(),to: "󰘚".to_string(),},
+            ];
+
 	    
             let bat_format="<span foreground='#229922'>{icon}</span><span foreground='#bbbbbb'>load time</span>".to_string();
             let right = vec![
@@ -204,7 +206,7 @@ fn main() {
                 Widget {wtype: WType::Alsa,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(vol_ani),warning: None,}, 
                 Widget {wtype: WType::Disk,callback: None,cmd: Some("/".to_string()),format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(redfull_ani1),warning: None,}, 
                 Widget {wtype: WType::Disk,callback: None,cmd: Some("/home".to_string()),format: None,tooltip: None,icon: Some("  ".to_string()),replace_with_icons: None,animate: Some(redfull_ani2),warning: None,}, 
-                Widget {wtype: WType::Wireless,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(wifi_ani),warning: None,}, 
+                Widget {wtype: WType::Wireless,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: Some(wifi_replacements),animate: Some(wifi_ani),warning: None,}, 
                 Widget {wtype: WType::RAM,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(redfull_ani3),warning: None,}, 
                 Widget {wtype: WType::Temps,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(temp_ani),warning: None,}, 
                 Widget {wtype: WType::Script,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: None,warning: None,},
@@ -212,7 +214,6 @@ fn main() {
     
             let config = RustyBar{ 
                 pos: Some(Pos::Top), 
-                noicons: Some(false) , 
                 backgrund: Some("#22222222".to_string()), 
                 foregrund: Some("#bbbbbb".to_string()), 
                 iconcolor: Some("#229922".to_string()), 
@@ -223,7 +224,7 @@ fn main() {
                 }
             };
 
-            let my_config = ron::ser::PrettyConfig::new().struct_names(false).indentor("    ".to_owned());
+            let my_config = ron::ser::PrettyConfig::new().struct_names(true).indentor("    ".to_owned());
 
 
             let out = ron::ser::to_string_pretty(&config,my_config).unwrap();
@@ -384,7 +385,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 
     match wed.wtype {
         WType::CPU => {       
-            let mut cpu = Cpu::new(format, cont,&wed.animate);
+            let mut cpu = Cpu::new(format, cont,&wed.animate,&wed.replace_with_icons);
 	        let mut tick = move || {
                 cpu.tick();
                 glib::Continue(true)
@@ -394,7 +395,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
         }
 
         WType::RAM => {
-	        let ram = RAM::new(format,cont,&wed.animate);
+	        let ram = RAM::new(format,cont,&wed.animate,&wed.replace_with_icons);
 	        let tick = move || {
 		        ram.tick();
 		        glib::Continue(true)
@@ -405,7 +406,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 
         WType::Disk => {
 	        let pos = wed.cmd.clone().unwrap_or("/".to_string());
-	        let disk = DiskUsage::new(pos,format,cont,&wed.animate);
+	        let disk = DiskUsage::new(pos,format,cont,&wed.animate,&wed.replace_with_icons);
 	        let tick = move || {
 		        disk.tick();
 		        glib::Continue(true)
@@ -415,7 +416,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 	    }
 
         WType::Alsa => {
-	        let volume = Volume::new(format,cont,&wed.animate);
+	        let volume = Volume::new(format,cont,&wed.animate,&wed.replace_with_icons);
 	        let tick = move || {
 		        volume.tick();
 		        glib::Continue(true)
@@ -425,7 +426,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 	    }
 
         WType::CLOCK => {
-            let clock = Clock::new(format, cont);
+            let clock = Clock::new(format, cont,&wed.replace_with_icons);
             let tick = move || {
                 clock.tick();
                 glib::Continue(true)
@@ -436,7 +437,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 
         WType::Temps => {
 	        let sens = wed.cmd.clone().unwrap_or("a".to_string());
-	        let temps = Temps::new(sens,format,cont,&wed.animate);
+	        let temps = Temps::new(sens,format,cont,&wed.animate,&wed.replace_with_icons);
 	        let tick = move || {
 		        temps.tick();
 		        glib::Continue(true)
@@ -445,7 +446,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 	    }
 
         WType::Battry => {
-	    let mut bat = BatteryView::new(format,cont,&wed.animate);
+	    let mut bat = BatteryView::new(format,cont,&wed.animate,&wed.replace_with_icons);
 	    let mut tick = move || {
 		bat.tick();
 		glib::Continue(true)
@@ -456,7 +457,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 
         WType::Script => {
 	        let cmd = wed.cmd.clone().unwrap_or("echo no cmd".to_string());
-	        let scrip = Command::new(cont,cmd,format);
+	        let scrip = Command::new(cont,cmd,format,&wed.replace_with_icons);
 	        let tick = move || {
 		        scrip.tick();
 		        glib::Continue(true)
@@ -469,7 +470,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
         
         WType::Wireless => {
 	        let interface = wed.cmd.clone().unwrap_or("wlan0".to_string());
-	        let wire = Wireless::new(format,interface, cont);
+	        let wire = Wireless::new(format,interface, cont,&wed.animate,&wed.replace_with_icons);
 	        let tick = move || {
 		        wire.tick();
 		        glib::Continue(true)
@@ -479,7 +480,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 	    }
 
         WType::Workspaces => {
-            let mut workspaces = Workspaces::new(format,cont);
+            let mut workspaces = Workspaces::new(format,cont,&wed.replace_with_icons);
 	        let mut tick = move || {
                 workspaces.tick();
                 glib::Continue(true)
@@ -488,7 +489,7 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
             glib::timeout_add_local(Duration::from_millis(1000), tick);
         }
         WType::ActiveWindow => {
-	        let mut windows = ActiveWindowTitle::new(format,cont);
+	        let mut windows = ActiveWindowTitle::new(format,cont,&wed.replace_with_icons);
 	        let mut tick = move || {
 		        windows.tick();
 		        glib::Continue(true)

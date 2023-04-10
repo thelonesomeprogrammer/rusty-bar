@@ -2,26 +2,28 @@ use alsa::mixer::{SelemChannelId, SelemId};
 use alsa::{self, Mixer};
 use gtk::{Label, Button, Box};
 use gtk::prelude::{LabelExt,ButtonExt,ContainerExt};
-use crate::AniStr;
-
+use crate::{AniStr,Replacement,replacements,animate};
 
 /// Shows the current volume of the default ALSA output.
 ///
 /// This widget shows the current volume of the default ALSA output, or '`M`' if
 /// the output is muted.
-///
-/// The widget uses `alsa-lib` to receive events when the volume changes,
-/// avoiding expensive polling. If you do not have `alsa-lib` installed, you
-/// can disable the `volume-widget` feature on the `cnx` crate to avoid
-/// compiling this widget.
+
+
 pub struct Volume {
     label: Label,
     format: String,
 	animation: Vec<AniStr>,
+	replacements: Vec<Replacement>,
 }
 
 impl Volume {
-    pub fn new<'a>(format: String,con:&Box, refanimation:&'a Option<Vec<AniStr>>) -> Volume {
+    pub fn new<'a>(
+		format: String,
+		con:&Box, 
+		refanimation:&'a Option<Vec<AniStr>>,
+		refreplacement:&'a Option<Vec<Replacement>>,
+	) -> Volume {
 		let label = Label::new(None);
 		let button = Button::new();
 		button.set_relief(gtk::ReliefStyle::None);
@@ -56,7 +58,12 @@ impl Volume {
 			print!("volume error could not toggle ")
 		});
 	con.add(&button);
-        Volume { label, format, animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec() }
+        Volume { 
+			label, 
+			format, 
+			animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec(),
+			replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(),
+		}
     }
 
     pub fn tick(&self){
@@ -86,20 +93,22 @@ impl Volume {
 		let format;
 		let insert = if !mute {
 			format = if self.animation.len() != 0 {
-				crate::animate(percentage, self.animation.to_vec(), true) 
+				animate(percentage, self.animation.to_vec(), true) 
 			} else {
 				self.format.clone()
 			};
 	    	format!("{}%",percentage)
 		} else {
 			format = if self.animation.len() != 0 {
-				crate::animate(1, self.animation.to_vec(), false) 
+				animate(1, self.animation.to_vec(), false) 
 			} else {
 				self.format.clone()
 			};
 			"mute".to_string()
 		};
-		let text = format.as_str().replace("load", &insert);
+		let text = replacements(
+			format.as_str().replace("load", &insert),
+			self.replacements.to_vec());
 	
 		self.label.set_markup(&text);
     }

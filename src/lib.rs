@@ -34,3 +34,16 @@ pub fn animate(load:u8, ani:Vec<AniStr>, cond:bool) -> String{
     return "".to_string();
 }
 
+#[derive(Deserialize,Serialize,Debug,Clone)]
+pub struct Replacement{
+    pub from: String,
+    pub to: String,
+}
+
+pub fn replacements(input:String, replacements:Vec<Replacement>) -> String{
+	let mut string = input.clone();
+    for i in replacements.iter() {
+		string = string.as_str().replace(&i.from, &i.to);
+    }
+    return string;
+}

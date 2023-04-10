@@ -4,25 +4,37 @@ use gtk::{Box, Label};
 use std::process::Command;
 use regex::Regex;
 use pango::EllipsizeMode;
+use crate::{Replacement,replacements};
 
 
 pub struct ActiveWindowTitle {
     label: Label,
-    format: String
+    format: String,
+	replacements: Vec<Replacement>,
 }
 
 impl ActiveWindowTitle {
     /// Creates a new Active Window Title widget.
-    pub fn new(format: String ,con: &Box) -> ActiveWindowTitle {
-	let label = Label::new(None);
-	label.set_ellipsize(EllipsizeMode::End);
-	con.add(&label);
-        ActiveWindowTitle { label, format }
+    pub fn new<'a>(
+		format: String,
+		con: &Box,
+		refreplacement:&'a Option<Vec<Replacement>>,
+	) -> ActiveWindowTitle {
+		let label = Label::new(None);
+		label.set_ellipsize(EllipsizeMode::End);
+		con.add(&label);
+        ActiveWindowTitle { 
+			label, 
+			format,
+			replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(),
+		}
     }
 
     pub fn tick(&mut self) {
 	if get_focused().is_ok(){
-	    let text = self.format.as_str().replace("load", &format!("{}",get_focused().unwrap()));
+	    let text =replacements(
+			self.format.as_str().replace("load", &get_focused().unwrap()),
+			self.replacements.to_vec());
 	    self.label.set_markup(&text);}
     }
 }

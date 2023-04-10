@@ -1,7 +1,7 @@
 use gtk::{Label,Box};
 use gtk::prelude::{LabelExt,ContainerExt};
 use psutil::sensors::temperatures;
-use crate::AniStr;
+use crate::{AniStr,Replacement,replacements,animate};
 
 
 pub struct Temps {
@@ -9,14 +9,26 @@ pub struct Temps {
     sens: String,
     format: String,
 	animation: Vec<AniStr>,
+	replacements: Vec<Replacement>,
 }
 
 
 impl Temps {
-    pub fn new<'a>(sens:String,format:String,con:&Box, refanimation:&'a Option<Vec<AniStr>>) -> Self {
+    pub fn new<'a>(
+		sens:String,
+		format:String,
+		con:&Box, 
+		refanimation:&'a Option<Vec<AniStr>>, 
+		refreplacement:&'a Option<Vec<Replacement>>,
+	) -> Self {
 		let label = Label::new(None);
 		con.add(&label);
-		Temps{label,sens,format, animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec()}
+		Temps{
+			label,
+			sens,
+			format, 
+			animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec(),
+			replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec(),}
     }
 
     pub fn tick(&self){
@@ -27,11 +39,13 @@ impl Temps {
 		    		if sens.as_ref().unwrap().label().unwrap().contains(self.sens.as_str()){
 						let temp = sens.as_ref().unwrap().current().celsius().round() as u8;
 						let format = if self.animation.len() != 0 {
-							crate::animate(temp, self.animation.to_vec(), true) 
+							animate(temp, self.animation.to_vec(), true) 
 						} else {
 							self.format.clone()
 						};
-						let text = format.as_str().replace("load",&format!("{temp}󰔄"));
+						let text = replacements(
+							format.as_str().replace("load",&format!("{temp}󰔄")),
+							self.replacements.to_vec());
 						self.label.set_markup(&text)
 		    		}
 				}

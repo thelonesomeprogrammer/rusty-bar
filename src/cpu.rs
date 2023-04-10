@@ -6,17 +6,23 @@ use gtk::Label;
 use gtk::prelude::LabelExt;
 use gtk::*;
 use gtk::prelude::ContainerExt;
-use crate::AniStr;
+use crate::{AniStr,Replacement,replacements,animate};
 /// Represents CPU widget used to show current CPU consumptiong
 pub struct Cpu {
     cpu_data: CpuData,
     format: String,
     label: Label,
     animation: Vec<AniStr>,
+    replacements: Vec<Replacement>,
 }
 
 impl Cpu {
-    pub fn new<'a>(format:String, con:&Box, refanimation:&'a Option<Vec<AniStr>>) -> Cpu{
+    pub fn new<'a>(
+        format:String, 
+        con:&Box, 
+        refanimation:&'a Option<Vec<AniStr>>,  
+        refreplacement:&'a Option<Vec<Replacement>>
+    ) -> Cpu{
         let label = Label::new(None);
         con.add(&label);
         let data = CpuData::get_values();
@@ -31,7 +37,13 @@ impl Cpu {
                 total_time: 0, 
                 iowait_time: 0 }
         };
-        Cpu { cpu_data, format, label, animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec() }
+        Cpu { 
+            cpu_data, 
+            format, 
+            label, 
+            animation: refanimation.as_ref().unwrap_or(&Vec::new()).to_vec(),
+            replacements: refreplacement.as_ref().unwrap_or(&Vec::new()).to_vec()
+        }
     }
 
     pub fn tick(&mut self) {
@@ -65,11 +77,13 @@ impl Cpu {
 
         let cpu_usage = (percentage * 100.0) as u8;
         let format = if self.animation.len() != 0 {
-	        crate::animate(cpu_usage, self.animation.to_vec(), true) 
+	        animate(cpu_usage, self.animation.to_vec(), true) 
 	    } else {
 	        self.format.clone()
 	    };
-        let text = format.clone().replace("load", &format!("{}%",cpu_usage));
+        let text = replacements(
+            format.clone().replace("load", &format!("{}%",cpu_usage)),
+            self.replacements.to_vec());
         self.label.set_markup(&text);
     }
 }
