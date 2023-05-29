@@ -4,20 +4,18 @@
 
 A simple icon loving bar for wayland
 
-### rusty-bar is in bata
-
-this is beta software and i don't recomend use it. if you want somthing stable
+### compositors
 
 currently the only compositor with pager and active window support  is hyprland
 
+### config
+
+if you have run rusty-bar at least once there should be a config file in ~/.config/rusty-bar/ named rustyconf.ron 
+
 ### want to help
 
-if you chose to help here just go to the discord server and we can talk about it
+if you chose to help here just go to the discord server and we can chat about it
 
 ### dicord
 
 https://discord.gg/TpFsgrsbvb
-
-## License
-
-MIT
