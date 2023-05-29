@@ -28,7 +28,7 @@ ron = "0.8.0"
 gtk4 = "0.6.6"
 gtk4-layer-shell = "0.0.3"
 psutil = "3.2.2"
-dirs = "5.0.10"
+dirs = "5.0.1"
 
 [package.metadata.deb]
 assets = [
