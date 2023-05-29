@@ -12,7 +12,7 @@ license = "GNU GPLv3"
 homepage = "https://github.com/thelonesomeprogrammer/rusty-bar/"
 
 [dependencies]
-anyhow = "1.0.70"
+anyhow = "1.0.71"
 cairo-rs = "0.17.0"
 cairo-sys-rs = "0.17.0" 
 chrono = "0.4.24"
@@ -20,15 +20,15 @@ pango = "0.17.4"
 pangocairo = "0.17.0"
 iwlib = { version = "0.1"}
 alsa = { version = "0.7.0"}
-regex = "1.7.3"
-serde = { version = "1.0.159"}
-serde_derive = { version = "1.0.159"}
+regex = "1.8.13"
+serde = { version = "1.0.160"}
+serde_derive = { version = "1.0.160"}
 battery = "0.7.8"
 ron = "0.8.0"
 gtk4 = "0.6.6"
 gtk4-layer-shell = "0.0.3"
 psutil = "3.2.2"
-dirs = "5.0.0"
+dirs = "5.0.10"
 
 [package.metadata.deb]
 assets = [
