@@ -1,6 +1,6 @@
 use std::process::Command as Process;
-use gtk::{Label,Box};
-use gtk::prelude::{LabelExt,ContainerExt};
+use gtk4::{Label,Box};
+use gtk4::prelude::BoxExt;
 use crate::{Replacement,replacements};
 pub struct Command {
     label: Label,
@@ -17,7 +17,7 @@ impl Command {
         refreplacement:&'a Option<Vec<Replacement>>,
     ) -> Command {
 	    let label = Label::new(None);
-	    con.add(&label);
+	    con.append(&label);
         Command { 
             label, 
             command, 

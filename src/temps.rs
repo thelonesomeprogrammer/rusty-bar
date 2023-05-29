@@ -1,5 +1,5 @@
-use gtk::{Label,Box};
-use gtk::prelude::{LabelExt,ContainerExt};
+use gtk4::{Label,Box};
+use gtk4::prelude::BoxExt;
 use psutil::sensors::temperatures;
 use crate::{AniStr,Replacement,replacements,animate};
 
@@ -22,7 +22,7 @@ impl Temps {
 		refreplacement:&'a Option<Vec<Replacement>>,
 	) -> Self {
 		let label = Label::new(None);
-		con.add(&label);
+		con.append(&label);
 		Temps{
 			label,
 			sens,

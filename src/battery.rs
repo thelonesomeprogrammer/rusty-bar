@@ -1,8 +1,7 @@
 use battery::{units::Time, Battery, Manager, State};
-use gtk::prelude::ContainerExt;
-use gtk::prelude::LabelExt;
-use gtk::Label;
-use gtk::*;
+use gtk4::prelude::BoxExt;
+use gtk4::Label;
+use gtk4::*;
 use crate::{AniStr,Replacement,replacements,animate};
 
 /// Shows battery charge percentage
@@ -36,7 +35,7 @@ impl BatteryView {
         refreplacement:&'a Option<Vec<Replacement>>,
     ) -> BatteryView {
         let label = Label::new(None);
-	    con.add(&label);
+	    con.append(&label);
 
 	    BatteryView { 
             label, 

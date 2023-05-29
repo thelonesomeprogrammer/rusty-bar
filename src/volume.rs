@@ -1,7 +1,7 @@
 use alsa::mixer::{SelemChannelId, SelemId};
 use alsa::{self, Mixer};
-use gtk::{Label, Button, Box};
-use gtk::prelude::{LabelExt,ButtonExt,ContainerExt};
+use gtk4::{Label, Button, Box};
+use gtk4::prelude::{ButtonExt,BoxExt};
 use crate::{AniStr,Replacement,replacements,animate};
 
 /// Shows the current volume of the default ALSA output.
@@ -26,9 +26,8 @@ impl Volume {
 	) -> Volume {
 		let label = Label::new(None);
 		let button = Button::new();
-		button.set_relief(gtk::ReliefStyle::None);
-		button.set_border_width(0);
-		button.add(&label);
+		button.set_has_frame(false);
+		button.set_child(Some(&label));
 		button.connect_clicked(|_|{
 	    	let mixer_res = Mixer::new("default", true);
 			if mixer_res.is_err(){
@@ -57,7 +56,7 @@ impl Volume {
 	    	}
 			print!("volume error could not toggle ")
 		});
-	con.add(&button);
+	con.append(&button);
         Volume { 
 			label, 
 			format, 

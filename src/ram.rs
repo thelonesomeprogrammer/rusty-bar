@@ -1,5 +1,5 @@
-use gtk::{Box,Label};
-use gtk::prelude::{LabelExt,ContainerExt};
+use gtk4::{Box,Label};
+use gtk4::prelude::BoxExt;
 use psutil::memory::virtual_memory;
 use crate::{AniStr,Replacement,replacements,animate};
 
@@ -20,7 +20,7 @@ impl RAM {
 		refreplacement:&'a Option<Vec<Replacement>>,
 	) -> Self {
 		let label = Label::new(None);
-		con.add(&label);
+		con.append(&label);
 		RAM{
 			label, 
 			format, 

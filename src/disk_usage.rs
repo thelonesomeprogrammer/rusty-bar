@@ -1,5 +1,5 @@
-use gtk::{Box,Label};
-use gtk::prelude::{ContainerExt, LabelExt};
+use gtk4::{Box,Label};
+use gtk4::prelude::BoxExt;
 use std::path::Path;
 use psutil::disk::disk_usage;
 use crate::{AniStr,Replacement,replacements,animate};
@@ -24,7 +24,7 @@ impl DiskUsage {
         refreplacement:&'a Option<Vec<Replacement>>,
     ) -> DiskUsage {
 	let label = Label::new(None);
-	con.add(&label);
+	con.append(&label);
         DiskUsage{ 
             label, 
             path, 

@@ -1,6 +1,6 @@
 use iwlib::*;
-use gtk::{Box,Label};
-use gtk::prelude::{ContainerExt,LabelExt};
+use gtk4::{Box,Label};
+use gtk4::prelude::BoxExt;
 use crate::{AniStr,Replacement,replacements,animate};
 
 /// Wireless widget to show wireless information for a particular ESSID
@@ -23,7 +23,7 @@ impl Wireless {
         refreplacement:&'a Option<Vec<Replacement>>,
     ) -> Wireless {
 	    let label = Label::new(None);
-	    con.add(&label);
+	    con.append(&label);
         Wireless { 
             interface, 
             label, 

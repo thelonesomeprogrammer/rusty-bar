@@ -1,10 +1,9 @@
 use anyhow::{anyhow, Context};
-use gtk::prelude::ContainerExt;
-use gtk::prelude::LabelExt;
-use gtk::prelude::WidgetExt;
-use gtk::traits::ButtonExt;
-use gtk::Button;
-use gtk::*;
+use gtk4::prelude::BoxExt;
+use gtk4::prelude::WidgetExt;
+use gtk4::traits::ButtonExt;
+use gtk4::Button;
+use gtk4::*;
 use regex::Regex;
 use std::process::Command;
 use crate::{Replacement,replacements};
@@ -73,10 +72,9 @@ impl Workspaces {
         for i in workspaces.iter() {
             let button = Button::new();
 	    	let label = Label::new(None);
-            button.set_border_width(0);
-            button.set_relief(ReliefStyle::None);
+                button.set_has_frame(false);
 	    	button.set_widget_name(&i.name);
-	    	button.add(&label);
+	    	button.set_child(Some(&label));
             button.connect_clicked(|button| {
                 if Command::new("hyprctl")
                     .args([
@@ -88,10 +86,10 @@ impl Workspaces {
 						print!("hyprctl could not be reached");
 					}
             });
-            container.add(&button);
+            container.append(&button);
 	    	buttons.push(LabeledButton{label,button});
         }
-        con.add(&container);
+        con.append(&container);
         Workspaces { 
 			workspaces: container, 
 			buttons, 
@@ -107,47 +105,43 @@ impl Workspaces {
 		
 		workspaces.sort_by(|a, b| a.id.cmp(&b.id));
 		
-		match workspaces.len()as i8-self.workspaces.children().len()as i8 {
+		match workspaces.len()as i8-self.buttons.len()as i8 {
 			d if d < 0 => {
 				for i in 0..workspaces.len()-1{
 					let text = replacements(
-						self.format.as_str().replace("load", "").as_str()
-							.replace("name",&format!("{}",workspaces[i].name)),
+						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
 						self.replacements.to_vec()
 					
 					);
 					self.buttons[i].label.set_markup(&text);
 					self.buttons[i].button.set_widget_name(&workspaces[i].name)
 				}
-				for i in workspaces.len()..self.workspaces.children().len(){
-					self.buttons.pop();
-					self.workspaces.children()[i].hide();
-					self.workspaces.remove(&self.workspaces.children()[i]);
+				for i in workspaces.len()-1..self.buttons.len()-1{
+					//self.buttons[i].button.hide();
+					self.buttons.remove(1);
+					self.workspaces.remove(&self.buttons[i].button);
 				}
 			},
 
 			d if d > 0 => {
-				for i in 0..self.buttons.len()-1{
+				for i in 0..self.buttons.len(){
 					let text = replacements(
-						self.format.as_str().replace("load", "").as_str()
-							.replace("name",&format!("{}",workspaces[i].name)),
+						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
 						self.replacements.to_vec()
 					);
 					self.buttons[i].label.set_markup(&text);
 					self.buttons[i].button.set_widget_name(&workspaces[i].name)
 				}
-				for i in self.workspaces.children().len()..workspaces.len() {
+				for i in self.buttons.len()..workspaces.len() {
 					let button = Button::new();
 					let label = Label::new(None);
-					button.set_border_width(0);
-					button.set_relief(ReliefStyle::None);
+					button.set_has_frame(false);
 					let text = replacements(
-						self.format.as_str().replace("load", "").as_str()
-							.replace("name",&format!("{}",workspaces[i].name)),
+						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
 						self.replacements.to_vec()
 					);
 					label.set_markup(&text);
-					button.add(&label);
+					button.set_child(Some(&label));
 					button.connect_clicked(|button| {
 						if Command::new("hyprctl")
 							.args([
@@ -160,8 +154,7 @@ impl Workspaces {
 							}
 					});
 					button.set_widget_name(&workspaces[i].name);
-					button.show_all();
-					self.workspaces.add(&button);
+					self.workspaces.append(&button);
 					self.buttons.push(LabeledButton { label, button })
 				}
 			},
@@ -169,8 +162,7 @@ impl Workspaces {
 			d if d == 0 => {
 				for i in 0..self.buttons.len(){
 					let text = replacements(
-						self.format.as_str().replace("load", "").as_str()
-							.replace("name",&format!("{}",workspaces[i].name)),
+						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
 						self.replacements.to_vec()		
 					);
 					self.buttons[i].label.set_markup(&text);

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, anyhow};
-use gtk::prelude::{LabelExt, ContainerExt};
-use gtk::{Box, Label};
+use gtk4::prelude::BoxExt;
+use gtk4::{Box, Label};
 use std::process::Command;
 use regex::Regex;
 use pango::EllipsizeMode;
@@ -22,7 +22,7 @@ impl ActiveWindowTitle {
 	) -> ActiveWindowTitle {
 		let label = Label::new(None);
 		label.set_ellipsize(EllipsizeMode::End);
-		con.add(&label);
+		con.append(&label);
         ActiveWindowTitle { 
 			label, 
 			format,

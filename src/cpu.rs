@@ -2,10 +2,9 @@ use anyhow::{anyhow, Result};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
-use gtk::Label;
-use gtk::prelude::LabelExt;
-use gtk::*;
-use gtk::prelude::ContainerExt;
+use gtk4::Label;
+use gtk4::*;
+use gtk4::prelude::BoxExt;
 use crate::{AniStr,Replacement,replacements,animate};
 /// Represents CPU widget used to show current CPU consumptiong
 pub struct Cpu {
@@ -24,7 +23,7 @@ impl Cpu {
         refreplacement:&'a Option<Vec<Replacement>>
     ) -> Cpu{
         let label = Label::new(None);
-        con.add(&label);
+        con.append(&label);
         let data = CpuData::get_values();
         let cpu_data = if data.is_ok(){
             data.unwrap()

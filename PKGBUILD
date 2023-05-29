@@ -11,8 +11,9 @@ license=("GNU GPLv3")
 arch=("x86_64")
 provides=("rusty-bar")
 conflicts=("rusty-bar")
+
 source=("https://github.com/thelonesomeprogrammer/rusty-bar/releases/download/v$pkgver/rusty-bar-$pkgver-x86_64.tar.gz")
-sha256sums=("5d1f148e5b4175b0d47c831efa311b0f3da438a1f81ea6042a0139b2be509ce2")
+sha256sums=("deeeffe32ff3d7ac73f92218df3c95c126cdd9b1dd3fc95325d433fb4efbf610")
 
 package() {
     install -Dm755 rusty-bar -t "$pkgdir/usr/bin"

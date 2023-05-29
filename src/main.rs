@@ -1,10 +1,8 @@
-use gtk::gdk::*;
-use gtk::gio::ApplicationFlags;
-use gtk::prelude::*;
-use gtk::*;
-use gtk::traits::SettingsExt;
-use gtk_layer_shell::Edge;
-use pango::FontDescription;
+use gtk4::gdk::*;
+use gtk4::traits::WidgetExt;
+use gtk4::prelude::*;
+use gtk4::*;
+use gtk4_layer_shell::Edge;
 use rusty_bar::cpu::Cpu;
 use rusty_bar::clock::Clock;
 use rusty_bar::workspaces::Workspaces;
@@ -71,9 +69,14 @@ struct RustyBar {
 }
 
 fn main() {
-    let application = Application::new(None, ApplicationFlags::default());
-    application.connect_activate(|app| {
-        let window = ApplicationWindow::new(app);
+    let app = Application::builder()
+        .application_id("org.example.HelloWorld")
+        .build();
+
+    app.connect_activate(|app| {
+        // We create the main window.
+        let window = ApplicationWindow::builder()
+        .application(app).title("Hello, World!").build();
 
         let config_dir = dirs::config_dir().unwrap().join(PathBuf::from("rusty_bar/rustyconf.ron"));
 
@@ -91,52 +94,52 @@ fn main() {
             ];
 
 
-            let clock_format = "<span foreground='#229922'> </span><span foreground='#bbbbbb'>%d/%m/%Y </span><span foreground='#229922'>󱨰 </span><span foreground='#bbbbbb'>%a </span><span foreground='#229922'>󱑎 </span><span foreground='#bbbbbb'>%H:%M </span>".to_string();
+            let clock_format = "<span foreground='#229922'>   </span><span foreground='#bbbbbb'>%d/%m/%Y </span><span foreground='#229922'>  󱨰  </span><span foreground='#bbbbbb'>%a </span><span foreground='#229922'>  󱑎   </span><span foreground='#bbbbbb'>%H:%M </span>".to_string();
             let center = vec![
                 Widget {wtype: WType::CLOCK,callback: None,cmd: None,format: Some(clock_format),tooltip: None,icon: None,replace_with_icons: None,animate: None,warning: None,}
             ];
 
 
 	        let battery_ani = vec![
-                AniStr{treash:95,format:"<span foreground='#229922'> 󰂄 </span><span foreground='#bbbbbb'>load full</span>".to_string(),condition:None},
-				AniStr{treash:90,format:dlayout(" 󰂋 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:80,format:dlayout(" 󰂊 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:70,format:dlayout(" 󰢞 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:60,format:dlayout(" 󰂉 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:50,format:dlayout(" 󰢝 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:40,format:dlayout(" 󰂈 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:30,format:dlayout(" 󰂇 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:20,format:dlayout(" 󰂆 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:10,format:dlayout(" 󰢜 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:5 ,format:dlayout(" 󰢟 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:90,format:dlayout(" 󰂂 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:80,format:dlayout(" 󰂁 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:70,format:dlayout(" 󰂀 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:60,format:dlayout(" 󰁿 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:50,format:dlayout(" 󰁾 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:40,format:dlayout(" 󰁽 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:30,format:dlayout(" 󰁼 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:20,format:dlayout(" 󰁻 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:10,format:dlayout(" 󰁺 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:5 ,format:dlayout(" 󰂎 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+                AniStr{treash:95,format:"<span foreground='#229922'> 󰂄  </span><span foreground='#bbbbbb'>load full</span>".to_string(),condition:None},
+				AniStr{treash:90,format:dlayout(" 󰂋  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:80,format:dlayout(" 󰂊  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:70,format:dlayout(" 󰢞  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:60,format:dlayout(" 󰂉  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:50,format:dlayout(" 󰢝  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:40,format:dlayout(" 󰂈  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:30,format:dlayout(" 󰂇  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:20,format:dlayout(" 󰂆  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:10,format:dlayout(" 󰢜  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:5 ,format:dlayout(" 󰢟  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:90,format:dlayout(" 󰂂  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:80,format:dlayout(" 󰂁  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:70,format:dlayout(" 󰂀  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:60,format:dlayout(" 󰁿  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:50,format:dlayout(" 󰁾  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:40,format:dlayout(" 󰁽  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:30,format:dlayout(" 󰁼  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:20,format:dlayout(" 󰁻  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:10,format:dlayout(" 󰁺  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:5 ,format:dlayout(" 󰂎  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
 				AniStr{treash:0 ,format:"<span foreground='#229922'> 󱉞 </span><span foreground='#bbbbbb'>load empty</span>".to_string(),condition:None},
 	        ];
 
             let wifi_ani = vec![
-                AniStr{treash:0 ,format: layout(" 󰤮 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:90,format: layout(" 󰤨 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:60,format: layout(" 󰤥 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:40,format: layout(" 󰤢 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:20,format: layout(" 󰤟 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-                AniStr{treash:5 ,format: layout(" 󰤯 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+                AniStr{treash:0 ,format:wlayout(" 󰤮 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:90,format:wlayout(" 󰤨 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:60,format:wlayout(" 󰤥 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:40,format:wlayout(" 󰤢 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:20,format:wlayout(" 󰤟 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+                AniStr{treash:5 ,format:wlayout(" 󰤯 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
 	        ];
 
             let vol_ani = vec![
-                AniStr{treash:0 ,format: layout(" 󰝟 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
-				AniStr{treash:80,format: layout("  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:50,format: layout(" 󰕾 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-				AniStr{treash:20,format: layout(" 󰖀 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
-			    AniStr{treash:0 ,format: layout(" 󰕿 ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+                AniStr{treash:0 ,format: layout(" 󰝟  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(false)},
+				AniStr{treash:80,format: layout("   ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:50,format: layout(" 󰕾  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+				AniStr{treash:20,format: layout(" 󰖀  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
+			    AniStr{treash:0 ,format: layout(" 󰕿  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:Some(true)},
 	        ];
         
             let temp_ani = vec![
@@ -171,13 +174,13 @@ fn main() {
 	        ];
             
             let redfull_ani2 = vec![
-			    AniStr{treash:100,format:layout("  ".to_string(),"#aa2222".to_string(),"#bbbbbb".to_string()),condition:None},
-                AniStr{treash:90 ,format:layout("  ".to_string(),"#aa4422".to_string(),"#bbbbbb".to_string()),condition:None},
-				AniStr{treash:80 ,format:layout("  ".to_string(),"#885522".to_string(),"#bbbbbb".to_string()),condition:None},
-				AniStr{treash:70 ,format:layout("  ".to_string(),"#666622".to_string(),"#bbbbbb".to_string()),condition:None},
-				AniStr{treash:60 ,format:layout("  ".to_string(),"#447722".to_string(),"#bbbbbb".to_string()),condition:None},
-			    AniStr{treash:50 ,format:layout("  ".to_string(),"#228822".to_string(),"#bbbbbb".to_string()),condition:None},
-                AniStr{treash:0  ,format:layout("  ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:None},
+			    AniStr{treash:100,format:layout("   ".to_string(),"#aa2222".to_string(),"#bbbbbb".to_string()),condition:None},
+                AniStr{treash:90 ,format:layout("   ".to_string(),"#aa4422".to_string(),"#bbbbbb".to_string()),condition:None},
+				AniStr{treash:80 ,format:layout("   ".to_string(),"#885522".to_string(),"#bbbbbb".to_string()),condition:None},
+				AniStr{treash:70 ,format:layout("   ".to_string(),"#666622".to_string(),"#bbbbbb".to_string()),condition:None},
+				AniStr{treash:60 ,format:layout("   ".to_string(),"#447722".to_string(),"#bbbbbb".to_string()),condition:None},
+			    AniStr{treash:50 ,format:layout("   ".to_string(),"#228822".to_string(),"#bbbbbb".to_string()),condition:None},
+                AniStr{treash:0  ,format:layout("   ".to_string(),"#229922".to_string(),"#bbbbbb".to_string()),condition:None},
 	        ];
 
             icon = get_icon(&WType::RAM);
@@ -205,7 +208,7 @@ fn main() {
                 Widget {wtype: WType::Battry,callback: None,cmd: None,format: Some(bat_format),tooltip: None,icon: None,replace_with_icons: None,animate: Some(battery_ani),warning: None,}, 
                 Widget {wtype: WType::Alsa,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(vol_ani),warning: None,}, 
                 Widget {wtype: WType::Disk,callback: None,cmd: Some("/".to_string()),format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(redfull_ani1),warning: None,}, 
-                Widget {wtype: WType::Disk,callback: None,cmd: Some("/home".to_string()),format: None,tooltip: None,icon: Some("  ".to_string()),replace_with_icons: None,animate: Some(redfull_ani2),warning: None,}, 
+                Widget {wtype: WType::Disk,callback: None,cmd: Some("/home".to_string()),format: None,tooltip: None,icon: Some("   ".to_string()),replace_with_icons: None,animate: Some(redfull_ani2),warning: None,}, 
                 Widget {wtype: WType::Wireless,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: Some(wifi_replacements),animate: Some(wifi_ani),warning: None,}, 
                 Widget {wtype: WType::RAM,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(redfull_ani3),warning: None,}, 
                 Widget {wtype: WType::Temps,callback: None,cmd: None,format: None,tooltip: None,icon: None,replace_with_icons: None,animate: Some(temp_ani),warning: None,}, 
@@ -229,17 +232,9 @@ fn main() {
 
             let out = ron::ser::to_string_pretty(&config,my_config).unwrap();
             if !dirs::config_dir().unwrap().join(PathBuf::from("rusty_bar/")).is_dir(){
-                if std::fs::create_dir(dirs::config_dir().unwrap().join(PathBuf::from("rusty_bar/")).as_path()).is_err(){
+                if std::fs::write("/etc/rusty_bar/rustyconf.ron", out.clone()).is_err(){
                     print!("faild to make new config")
                 }
-            }
-
-            if std::fs::write(config_dir.as_path(), out.clone()).is_err(){
-                print!("faild to make new config")
-            }
-
-            if std::fs::write("/etc/rusty_bar/rustyconf.ron", out.clone()).is_err(){
-                print!("faild to make new config")
             }
 
             out
@@ -247,31 +242,15 @@ fn main() {
         let config: RustyBar = ron::from_str(conf.as_str()).expect("error in config");
          
 
-        Settings::for_screen(&gtk::prelude::WidgetExt::screen(&window).expect("msg")).expect("fuck").set_gtk_font_name(Some("Hack Nerd Font"));
-        window.connect_screen_changed(set_visual);
-        // Draws the window using a custom color and opacity.
-        window.connect_draw(
-            move |_: &ApplicationWindow, ctx: &cairo::Context| -> Inhibit{    
-                ctx.set_operator(cairo::Operator::Screen);
-                let layout=pangocairo::functions::create_layout(ctx);
-                layout.set_font_description(Some(&FontDescription::from_string("Hack Nerd Font")));
-                pangocairo::functions::show_layout(ctx, &layout);
-        
-                Inhibit(false)
-            }
-        );
-
         // Initialize layer shell before the window has been fully initialized.
-        gtk_layer_shell::init_for_window(&window);
+        gtk4_layer_shell::init_for_window(&window);
 
         // Order above normal windows
-        // Prior to 0.2.9, this was set to Bottom but it caused issues with tooltips being shown below
-        // windows.
-        gtk_layer_shell::set_layer(&window, gtk_layer_shell::Layer::Top);
+        gtk4_layer_shell::set_layer(&window, gtk4_layer_shell::Layer::Top);
 
         // Push other windows out of the way
         // Toggling this off may help some if they are in applications that have weird unicode text, which may mess with the bars scaling.
-        gtk_layer_shell::auto_exclusive_zone_enable(&window);
+        gtk4_layer_shell::auto_exclusive_zone_enable(&window);
 
         let istop = match config.pos.is_some() {
             true => true,
@@ -281,69 +260,46 @@ fn main() {
             }
         };
 
-        gtk_layer_shell::set_anchor(&window, Edge::Top, istop);
-        gtk_layer_shell::set_anchor(&window, Edge::Right, true);
-        gtk_layer_shell::set_anchor(&window, Edge::Left, true);
-        gtk_layer_shell::set_anchor(&window, Edge::Bottom, !istop);
+        gtk4_layer_shell::set_anchor(&window, Edge::Top, istop);
+        gtk4_layer_shell::set_anchor(&window, Edge::Right, true);
+        gtk4_layer_shell::set_anchor(&window, Edge::Left, true);
+        gtk4_layer_shell::set_anchor(&window, Edge::Bottom, !istop);
 
         // Allows for specifing the namespace of the layer, the default is "gtk-layer-shell" to not break existing configs.
         let namespace = "gtk-layer-shell".to_string();
 
-        gtk_layer_shell::set_namespace(&window, &namespace);
+        gtk4_layer_shell::set_namespace(&window, &namespace);
 
-        // Initialize gdk::Display by default value, which is decided by the compositor.
-        let display = Display::default().expect("thing");
-
-        // Loads the monitor variable from config, default is 0.
-        // Gets the actual gdk::Monitor from configured number.
-        let monitor = display.monitor(0).expect("thing");
-
-        // Sets which monitor should be used for the bar.
-        gtk_layer_shell::set_monitor(&window, &monitor);
-
-        // For transparency to work.
-        window.set_app_paintable(true);
 
         // Build all the widgets.
         build_widgets(&window ,config);
+	window.show()
     });
 
-    application.run();
+    app.run();
 }
 
-fn set_visual(window: &ApplicationWindow, screen: Option<&Screen>) {
-    if let Some(screen) = screen {
-        if let Some(ref visual) = screen.rgba_visual() {
-            window.set_visual(Some(visual)); // Needed for transparency, not available in GTK 4+ so
-                                             // F.
-        }
-    }
-}
 
 fn build_widgets(window: &ApplicationWindow ,config:RustyBar) {
     // Create box widgets, which we'll be using to draw the content onto.
-    let root = Box::new(Orientation::Horizontal, 0);
+    let root = CenterBox::new();
     let left = Box::new(Orientation::Horizontal, 0);
     let centered = Box::new(Orientation::Horizontal, 0);
     let right = Box::new(Orientation::Horizontal, 0);
 
-    // 0.2.5: Root expands across the entire bar, previously "left" would do this but it isn't
-    //   ideal when customizing, since borders would draw on the entire bar rather than just on the
-    //   left portion of the bar.
     root.set_widget_name("root");
 
-    // 0.2.5: Allow for customizing left, centered and right.
     left.set_widget_name("left");
     centered.set_widget_name("centered");
     right.set_widget_name("right");
 
-
+    
     root.set_center_widget(Some(&centered));
-    root.pack_end(&right, false, true, 0);
-    root.add(&left);
+    root.set_end_widget(Some(&right));
+    root.set_start_widget(Some(&left));
 
-
-    window.add(&root);
+    window.set_child(Some(&root));
+    
 
 
     let fcolor = config.foregrund.unwrap_or("#bbbbbb".to_string());
@@ -369,11 +325,8 @@ fn build_widgets(window: &ApplicationWindow ,config:RustyBar) {
             wedgit(&i,&right,fcolor.clone(),icolor.clone());
         }
     }
-
-    // Prepare and show all of the widgets.
-    window.show_all();
 }
-
+    
 fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
     let icon = wed.icon.clone().unwrap_or(get_icon(&wed.wtype));
 
@@ -493,16 +446,15 @@ fn wedgit(wed: &Widget, cont: &Box,fcolor:String,icolor:String) {
 	        let mut tick = move || {
 		        windows.tick();
 		        glib::Continue(true)
-	        };
-	        tick();
-	        glib::timeout_add_local(Duration::from_secs(1), tick);
-	    }
-    }; 
+            };
+            tick();
+            glib::timeout_add_local(Duration::from_millis(1000), tick);
+        }
+    }
 }
-
-fn get_icon(wedtype: &WType)->String{
-    match wedtype {
-        WType::Workspaces => "name".to_string(),
+fn get_icon(wedgit:&WType) -> String {
+    match wedgit{
+        WType::Workspaces => "".to_string(),
         WType::CLOCK => " 󱑎 ".to_string(),
         WType::ActiveWindow => "".to_string(),
         WType::CPU => "  ".to_string(),
@@ -524,4 +476,8 @@ fn dlayout(icon:String,icolor:String,fcolor:String)->String{
 
 fn layout(icon:String,icolor:String,fcolor:String)->String{
     format!("<span foreground='{icolor}'>{icon}</span><span foreground='{fcolor}'>load</span>") 
+ }
+
+ fn wlayout(icon:String,icolor:String,fcolor:String)->String{
+    format!("<span foreground='{icolor}'>{icon}</span><span foreground='{fcolor}'>ssid </span>") 
  }

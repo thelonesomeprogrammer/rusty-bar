@@ -1,8 +1,7 @@
-use gtk::prelude::WidgetExt;
-use gtk::prelude::LabelExt;
-use gtk::*;
-use gtk::prelude::ContainerExt;
-use gtk::Label;
+use gtk4::prelude::WidgetExt;
+use gtk4::*;
+use gtk4::prelude::BoxExt;
+use gtk4::Label;
 use crate::{Replacement,replacements};
 /// Shows the current time and date.
 ///
@@ -22,7 +21,7 @@ impl Clock {
         let label = Label::new(None);
         label.set_widget_name("Clock");
         label.set_markup(format.as_str());
-        con.add(&label);
+        con.append(&label);
         Clock { 
             format, 
             label,
