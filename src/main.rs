@@ -14,7 +14,7 @@ use rusty_bar::wireless::Wireless;
 use rusty_bar::ram::RAM;
 use rusty_bar::temps::Temps;
 use rusty_bar::command::Command;
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use std::path::PathBuf;
 use rusty_bar::AniStr;

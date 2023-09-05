@@ -11,7 +11,8 @@ pub mod temps;
 pub mod command;
 
 
-use serde::{Serialize,Deserialize};
+use serde_derive::{Serialize,Deserialize};
+
 #[derive(Deserialize,Serialize,Debug,Clone)]
 pub struct AniStr {
     pub condition: Option<bool>,
