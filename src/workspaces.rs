@@ -38,7 +38,7 @@ fn get_workspaces() -> Vec<ActiveWorkspace> {
 
     let re = Regex::new(
         // Note: we ignore + but capture -
-        r"(?P<id>[1-9]+) \((?P<name>[\S])\) on monitor (?P<monitor>\S+):\n\t[a-z]+: (?P<windows>[0-9]+)(\n\t\S+\s\S+){2}\n\t\S+\s(?P<lactive>(\w+| |@|:|,|~|/|&|-|\*|\.|●)+)",
+        r"(?P<id>[1-9]+) \((?P<name>[\S])\) on monitor (?P<monitor>\S+):\n\t[a-z]+: (?P<windows>[0-9]+)(\n\t\S+\s\S+){2}\n\t\S+\s(?P<lactive>(\w+|\]|\[| |@|:|,|~|/|&|-|\*|\.|●)+)",
     )
     .map_err(|_| anyhow!("Failed to compile regex for parsing sensors output"));
 	if re.is_err(){
@@ -105,33 +105,25 @@ impl Workspaces {
 		
 		workspaces.sort_by(|a, b| a.id.cmp(&b.id));
 		
-		match workspaces.len()as i8-self.buttons.len()as i8 {
+		match workspaces.len() as i8-self.buttons.len() as i8 {
 			d if d < 0 => {
-				for i in 0..workspaces.len()-1{
-					let text = replacements(
-						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
-						self.replacements.to_vec()
-					
-					);
-					self.buttons[i].label.set_markup(&text);
-					self.buttons[i].button.set_widget_name(&workspaces[i].name)
-				}
-				for i in workspaces.len()-1..self.buttons.len()-1{
+				for i in workspaces.len()..self.buttons.len(){
 					//self.buttons[i].button.hide();
-					self.buttons.remove(1);
 					self.workspaces.remove(&self.buttons[i].button);
+					self.buttons.remove(i);
 				}
+                for i in 0..workspaces.len(){
+                    let text = replacements(
+                        self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
+                        self.replacements.to_vec()
+
+                        );
+                    self.buttons[i].label.set_markup(&text);
+                    self.buttons[i].button.set_widget_name(&workspaces[i].name)
+                }
 			},
 
 			d if d > 0 => {
-				for i in 0..self.buttons.len(){
-					let text = replacements(
-						self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
-						self.replacements.to_vec()
-					);
-					self.buttons[i].label.set_markup(&text);
-					self.buttons[i].button.set_widget_name(&workspaces[i].name)
-				}
 				for i in self.buttons.len()..workspaces.len() {
 					let button = Button::new();
 					let label = Label::new(None);
@@ -157,6 +149,14 @@ impl Workspaces {
 					self.workspaces.append(&button);
 					self.buttons.push(LabeledButton { label, button })
 				}
+                for i in 0..self.buttons.len(){
+                    let text = replacements(
+                        self.format.as_str().replace("load",&format!("{}",workspaces[i].name)),
+                        self.replacements.to_vec()
+                        );
+                    self.buttons[i].label.set_markup(&text);
+                    self.buttons[i].button.set_widget_name(&workspaces[i].name)
+                }
 			},
 			
 			d if d == 0 => {

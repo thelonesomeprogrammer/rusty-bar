@@ -51,7 +51,7 @@ impl Wireless {
                 self.format.clone()
             };
 	        format.as_str().replace("load", "NA").as_str().replace("ssid", "")
-	    },self.replacements.to_vec());
-	    self.label.set_markup(&text);
+	    }, self.replacements.to_vec());
+        self.label.set_markup(&text);
     }
 }
