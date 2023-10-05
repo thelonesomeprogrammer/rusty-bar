@@ -11,6 +11,9 @@ categories = ["gui"]
 license = "GNU GPLv3"
 homepage = "https://github.com/thelonesomeprogrammer/rusty-bar/"
 
+[profile.release]
+debug = true
+
 [dependencies]
 anyhow = "1.0.71"
 cairo-rs = "0.17.0"
